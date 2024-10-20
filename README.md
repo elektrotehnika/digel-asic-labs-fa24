@@ -1,178 +1,293 @@
-# asic-labs-sp24
-Welcome to the repository for EECS 151/251A Spring 2024 ASIC labs! This repository will contain all the information you need to complete lab exercises. If you are just getting started make sure to see the [Setup](#Setup) section to create your environment.
+# Digital electronics fall 2024 ASIC labs (asic-labs-fa24)
 
-## Lab Policies
-
-1. Collaboration is encouraged, but all work must be individual
-2. Use [queue](https://forms.gle/NHcuqonSwAQALuea7) for question, debugging help, concept review, etc
-3. Do not run heavy workloads on servers
-4. Check-offs must be done in person
+Welcome to the repository for Digital electronics fall 2024 ASIC labs! This repository will contain all the information you need to complete lab exercises. If you are just getting started make sure to see the [Setup](#Setup) section to create your environment.
 
 ## Lab Due Dates
 
-All labs must be checked off **before** your next lab session. 
+All labs must be checked off **before** your next lab session.
 
-| Lab |    Due Date    |
-|:---:|:--------------:|
-|  1  | 1/29 (11:59pm) |
-|  2  |                |
-|  3  |                |
-|  4  |                |
-|  5  |                |
-
-## Setup <a name="paragraph1"></a>
-
-<details open>
-  <summary>See Instructions</summary>
-
-### Getting an Instructional Account
-
-You are required to get an EECS instructional account to login to the workstations in the lab, since you will be doing all your work on these machines (whether you're working remotely or in-person). 
-
-1. Visit WebAcct: http://inst.eecs.berkeley.edu/webacct.
-2. Click "Login using your Berkeley CalNet ID"
-3. Click on "Get a new account" in the *eecs151* row. 
-
-Once the account has been created, you can email your class account form to yourself to have a record of your account information.  You can follow the instructions on the emailed form to change your Linux password with `ssh update.eecs.berkeley.edu` and following the prompts.
+| Lab |    Start Date     |    Due Date     |
+|:---:|:-----------------:|:---------------:|
+|  1  |  not after 10/25  | 11/04 (11:59pm) |
+|  2  |  not after 11/05  | 11/18 (11:59pm) |
+|  3  |  not after 11/19  | 12/02 (11:59pm) |
+|  4  |  not after 12/03  | 12/16 (11:59pm) |
+|  5  |  not after 12/17  | 12/30 (11:59pm) |
 
 
-### Logging into the Classroom Servers
+## Digital ASIC Design
 
-The servers used for this class are primarily `eda-[1-12].eecs.berkeley.edu`.  You may also use the `c111-[1-17].eecs.berkeley.edu` machines (which are physically located in Cory 111/117). You can access all of these machines remotely through SSH. 
+A high-level digital design flow chart is shown below.
 
+<!-- Design Flow image -->
+<figure align="center">
+  <img src="./figs/DesignAbstractions.png" style="width:80%">
+  <!--<figcaption>Image borrowed from: https://www.vlsiuniverse.com/complete-asic-design-flow/</figcaption> -->
+</figure>
 
-#### SSH: 
+Here is a more detailed physical design flow chart.
 
-**SSH is the preferred connection for ASIC labs because most work will be performed using the terminal and should be used unless a GUI is required**.  The SSH protocol also enables file transfer between your local and lab machines via the `sftp` and `scp` utilities. **WARNING: DO NOT transfer files related to CAD tools to your personal machine. Only  transfer files needed for your reports.**
+<!-- ASIC Design Flow image -->
+<figure align="center">
+  <img src="./figs/RTL_PhysicalDesign.png" style="width:80%">
+  <!-- <figcaption>Image borrowed from: https://www.vlsiuniverse.com/complete-asic-design-flow/</figcaption> -->
+</figure>
 
-How To:
-<ul style="list-style: none;">
- <li>
-<details>
-<summary>Linux, BSD, MacOS</summary>
-<br>
+This flow chart shows many of the individual stages digital designers follow in industry. However, it does not show the cyclical nature between individual stages. For example, a bug discovered in *Post-P&R Sim* can provoke *RTL Design* modifications. In general, problems discovered in the **backend** (flow steps after *Synthesis*) sometimes require changes in the **frontend** (flow steps up to *Synthesis*) . Therefore, it is imperative that you are well-versed in the mechanics of simulating your designs before even designing anything!
 
-Access your workstation through SSH by running:
-
-```shell
-ssh eecs151-YYY@eda-X.eecs.berkeley.edu
-```
-
-In our examples, this would be:
-
-```shell
-ssh eecs151-abc@eda-8.eecs.berkeley.edu
-```
-</details>
-</li>
- <li>
-<details>
-<summary>Windows</summary>
-<br>
-The classic and most lightweight way to use SSH on Windows is PuTTY (https://www.putty.org/). Download it and login with the FQDN above as the Host and your instructional account username. You can also use WinSCP (winscp.net) for file transfer over SSH.
-
-Advanced users may wish to install Windows Subsystem for Linux (https://docs.microsoft.com/en-us/windows/wsl/install-win10, Windows 10 build 16215 or later) or Cygwin (cygwin.com) and use SSH, SFTP, and SCP through there.
-
-</details>
-</li>
-</ul>
+Anyhow, the principal stages to pay attention for now are: *RTL Design*, *Synthesis*, *Place & Route*.
 
 
-It is ***highly*** recommended to utilize one of the following SSH session management tools: `tmux` or `screen`. This would allow your remote terminal sessions to remain active even if your SSH session disconnects, intentionally or not. Below are tutorials for both:
-* [Tmux Tutorial](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/)
-* [Screen Tutorial](https://www.rackaid.com/blog/linux-screen-tutorial-and-how-to/)
+### (E)CAD Tools
+
+Going through the design flow is quite labor intensive and intricate. In general, computer-aided design (CAD) software tools refer to programs used to reduce the burden of manually performing each stage of a design flow. Electronic design automation (EDA), or electronic computer-aided design (ECAD), tools are specifically created to aid in integrated circuit design flows.
+
+The three major CAD companies for ASIC design are: *Cadence*, *Synopsys*, and *Siemens*. Each of these companies supplies tools for all stages of the Very Large-Scale Integration (VLSI) flow (VLSI refers to complex ICs with thousands or more trasistors). Also, over the last few years, open-source EDA tools are also being developed and they are becoming more and more powerful and can be utilized to create functional chips.
+
+Commonly used EDA tools currently available for ASIC design can be found in the table below.
+
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
+</style>
+<table class="tg", align="center">
+<thead>
+  <tr>
+    <th class="tg-c3ow">**Vendor**</th>
+    <th class="tg-c3ow">Synopsys</th>
+    <th class="tg-c3ow">Cadence</th>
+    <th class="tg-c3ow">Siemens</th>
+    <th class="tg-c3ow">Open-source</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="tg-c3ow">**Simulation**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">VCS</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Xcelium Logic Simulator</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Model Sim/Questa Sim</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Verilator/Icarus</span></td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">**Synthesis**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">FusionCompiler (Design Complier)</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Genus</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">-</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Yosys</td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">**Place and Route**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">FusionCompiler (IC Compiler II)</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Innovus</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">-</span></td>
+        <td class="tg-c3ow"><span style="font-style:italic">OpenROAD</td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">**Physical Layout**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">Custom Compiler </span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Virtuoso Layout Suite</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">L-Edit</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Magic/Klayout</span></td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">**DRC and LVS**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">IC Validator</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Virtuoso Layout Suite</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Calibre</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Magic/Klayout,Netgen</span></td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">**Verification and Signoff**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">NanoTime</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Virtuoso Layout Suite</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Calibre</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Magic/Klayout</span></td>
+  </tr>
+  <tr>
+    <td class="tg-c3ow">**Power**</td>
+    <td class="tg-c3ow"><span style="font-style:italic">Prime Power</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">Voltus</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">-</span></td>
+    <td class="tg-c3ow"><span style="font-style:italic">-</span></td>
+  </tr>
+</tbody>
+</table>
+
+It is common to utilize different tools for different stages of the design flow. This is possible because the tools typically write out common interchange file formats that can be consumed by other vendors’ tools, or they provide utilities such that files can be converted to different formats. For example, a design may use Synopsys *VCS* for simulation, Cadence *Genus* and *Innovus* for synthesis and place-and-route, respectively, and Mentor *Calibre* for DRC and LVS.
+
+However, these tools are proprietary and the licenses for their usage can be quite expensive. The leading open-source alternative, the foundational application for semiconductor digital design is the [OpenROAD](https://theopenroadproject.org/) project. Its goal is: *"24-hour, No-Human-In-The-Loop layout design for SOC with no Power-Performance-Area (PPA) loss Tapeout-capable tools in source code form, with permissive licensing"*. It contains a set of tools capable of rapid design exploration and physical design implementation, covering most of the ASIC design flow.
 
 
-#### X2Go
+### Process Design Kit (SkyWater SKY130 technology)
 
-For situations in which you need a graphical interface (waveform debugging, layout viewing, etc.) use X2Go. This is a faster and more reliable alternative to more traditional XForwarding over SSH. X2Go is also recommended because it connects to a persistent graphical desktop environment, which continues running even if your internet connection drops.
+"*A PDK is a set of files used within the semiconductor industry to model a fabrication process for the design tools used to design an integrated circuit.  PDK’s are often specific to a foundry, and may be subject to a non-disclosure agreement.  While most PDK’s are proprietary to a foundry, certain PDKs are open-source and entirely within the public domain.*" (definition borrowed from [here](https://blink.ucsd.edu/sponsor/exportcontrol/pdkguidance.html)).
 
-Download the X2Go client for your platform from the website: https://wiki.x2go.org/doku.php/download:start.
-
-> **_NOTE:_**  MacOS sometimes blocks the X2Go download/install, if it does follow the directions here: https://support.apple.com/en-us/HT202491.
-
-To use X2Go, you need to create a new session (look under the Session menu). Give the session any name, but set the "Host" field to the FQDN of your lab machine and the "Login" field to your instructional account username. For “Session type”, select “GNOME”. Here’s an example from macOS:
-
-<p align="center">
-<img src="./figs/x2gomacos.png" width="500" />
-</p>
+In this course we will use [SkyWater SKY130](https://skywater-pdk.readthedocs.io/en/main/), or SKY130, which is an open source process design kit (PDK) for a 130nm node. This is the PDK we will use for this lab. Right now, the details of the PDK are unnecessary as you will gain familiarity in future labs. All major companies like Intel, Samsung, Global Foundaries or TSMC have their own PDKs.
 
 
-### Create Subdirectory for Work
-Before you begin exercises, you need to create a directory for your work. Your `/home` directory has limited space, therefore you will create a personal subdirectory underneath `/home/tmp/<your-eecs-username>` for all development work (copy any important results to your home directory). 
+### Hammer
 
-Steps: 
-1. Log into the EECS Instructional WebAccount (http://inst.eecs.berkeley.edu/webacct) with your CalNet ID. 
-2. Click on "*More...*"
-3. Select "*Make /home/tmp Directory*"
+In this course we will use an ASIC design framework developed at Berkeley, called Hammer. Hammer abstracts away tool- (Cadence, Synopsys, Mentor, etc.) and technology- (TSMC, X-FAB, Intel, etc.) specific considerations away from ASIC design. The philosophy of Hammer aims to maximize reusability of design intent between projects that may have different underlying tool infrastructures and target different process technologies. Documentation about Hammer philosophy and usage is at Hammer [website](hammer-vlsi.readthedocs.io).
 
-<p align="center">
-<img src="./figs/make_home_tmp_dir.png" width="400" />
-</p>
+Hammer consumes serialized configuration files in YAML or JSON format, which are used as intermediate representation (IR) languages between higher-level physical design generators and the underlying scripts that the ASIC design flow tools require.
 
-### Remote Access
-
-It is important that you can remotely access the instructional servers. Remote into server using either SSH (Secure SHell) or X2Go. The range of accessible machines are `eda-[1-12]` and `c111-[1-17]`. The fully qualified DNS name (FQDN) is `eda-X.eecs.berkeley.edu` or `c111-X.eecs.berkeley.edu`. For example, if you select machine `eda-8`, the FQDN would be `eda-8.eecs.berkeley.edu`.
-
-<!-- Next, note your instructional class acccount name - the one that looks like `eecs151-YYY`, for example `eecs151-abc`. This is the account you created at the start of this lab. -->
-
-#### VPN
-If you're not on campus connected to *eduroam*, you need to use a global protect VPN to get over the instructional machine's firewall. Follow this guide to install the VPN: https://software.berkeley.edu/bsecure-remote-access-vpn
+> **Note:** The version of Hammer used in this course may deviate from public or "main" Hammer. Please reference the public [repository](https://github.com/ucb-bar/hammer) if you are interested in the latest, consistent source.
 
 
-> **_NOTE:_** You can use any lab machine, but our lab machines aren’t very powerful; if everyone uses the same one, everyone will find that their jobs perform poorly. ASIC design tools are resource intensive and will not run well when there are too many simultaneous users on these machines. We recommend that every time you want to log into a machine, examine its load on https://hivemind.eecs.berkeley.edu/ for the `eda-X` machines, or using `top` when you log in. If it is heavily loaded, consider using a different machine. If you also notice other `eecs151` users with jobs consuming excessive resources, do feel free to reach out to the GSIs about it.
+## Setup
 
-</details>
+This section covers lab environment setup and installation. It goes without saying that a Linux machine is mandatory for these labs, since this is a requirement for all ASIC design CAD tools. Non-tested alternatives on Windows include WSL or using a hypervisor/virtualizer to run a Linux virtual machine on Linux. The lab content and tools were tested on a Kubuntu 24.04 machine.
 
+### Getting an GitHub Account
 
-## Clone this Repo
+In this course, we use GitHub to manage labs and the project, so in order to download lab content and submit your results, you are required to create a GitHub account. The instructions on how to do so can be found [here](https://docs.github.com/en/get-started/start-your-journey/creating-an-account-on-github).
 
-You are now ready to complete the lab exercises! In this course, we use GitHub Classroom to manage labs and the project. Click the link below to create a lab repo on your GitHub account.
-<p align="center" style="font-size:1.5em">
-<a href="https://classroom.github.com/a/5WvvqY9q" > Accept GitHub Classroom Invitation </a>
-</p>
-
-### SSH Keys
-We will use SSH keys to authenticate with Github.
-Run these commands when logged in on your `eecs151-xxx` account.
-
-- Create a new SSH key:
-```shell
-ssh-keygen -t ed25519 -C "your_email@berkeley.edu"
-```
-Keep hitting enter to use the default settings.
-You can set up a passphrase if you want, then you'll need to type it whenever you ssh using public key.
-
-- Copy your public key:
-```
-cat ~/.ssh/id_ed25519.pub
-```
-Copy the text that's printed out.
-
-- Add the key to your Github account. [Go here](https://github.com/settings/keys), click on "New SSH Key", paste your public key, and click "Add SSH key".
-
-- Finally test your SSH connection
-```shell
-ssh -T git@github.com
-Hi <username>! You've successfully authenticated, but GitHub does not provide shell access.
-```
-
-Clone the repo to your work directory.
+This repository should be cloned along with its parent module, using the following commands:
 
 ```shell
-cd /home/tmp/<your-eecs-username>
-git clone git@github.com:EECS151-sp24/asic-labs-sp24-(your GitHub user ID).git
+git clone git@github.com:elektrotehnika/digel.git --recursive
+git submodule update --recursive --remote --merge
 ```
-Now, `cd` into the cloned directory. 
-Add the staff skeleton as a remote in order to pull any changes to the lab and starter code for future labs.
+
+and updated using the following commands:
 
 ```shell
-git remote add skeleton https://github.com/EECS150/asic-labs-sp24.git
+git pull
+git submodule update --recursive --remote --merge
 ```
-You should now see both your github classroom and the staff skeleton if you run `git remote -v`. 
-You can run `git pull skeleton main` to pull any updates to the skeleton. 
 
-It may be the case that staff needs to make an update on already released labs, and if you have already edited skeleton code you may run into a merge conflict. 
-In this case you will have to tell git which changes you want to keep, check out [this link](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-using-the-command-line) for a quick way to deal with such merge conflicts.
+### Hammer Setup
 
-This repository contains all lab materials including lab manuals (README.md) and all skeleton code in the *skel* subdirectories. 
+As already mentioned, the main tool needed for these labs is [Hammer](https://github.com/ucb-bar/hammer), the physical design framework which simplifies interaction with the ASIC design ECAD tools and specific technologies.
+
+> **Note:** It will be assumed in this lab that all the tools and technologies used in this lab are installed in default path. Otherwise, some scripts might need manual adjustment!
+
+In order to set up Hammer and its prerequisites, folow these steps:
+
+0. Hammer depends on Python 3.9+, so a corresponding [Python](https://www.python.org/downloads/) version must be installed on your computer
+
+1. First, clone Hammer with `git`
+
+```shell
+git clone git@github.com:ucb-bar/hammer.git
+cd hammer
+```
+
+2. Install [poetry](https://python-poetry.org/docs/master/) (a tool for dependency management and packaging in Python) to manage the development virtualenv and dependencies (with the help of the *curl* command or manually from the URL))
+
+```shell
+curl -sSL https://install.python-poetry.org | python3 -
+export PATH="$PATH:~/.local/bin" # poetry
+```
+
+3. Create a poetry-managed virtualenv using the dependencies from `pyproject.toml`
+
+```shell
+# create the virtualenv inside the project folder (in .venv)
+poetry config virtualenvs.in-project true
+poetry install
+```
+
+4. Activate the virtualenv. Within the virtualenv, Hammer is installed and you can access its scripts defined in `pyproject.toml` (in `[tool.poetry.scripts]`)
+
+```shell
+poetry shell
+hammer-vlsi -h
+```
+
+This virtual environment needs to be activated each time you are about to run Hammer. But for now, exit the virtual env and let's do the rest of the setup.
+
+### Install Anaconda
+
+In this labs, we will mainly use open-source ASIC design tools and technologies. For that reason we will also download the needed techonolgy files and install required tools using *conda* (Anaconda).
+
+1. Download the Anaconda installation [script](https://repo.anaconda.com/archive/Anaconda3-2024.06-1-Linux-x86_64.sh)
+(from [here]([https://www.anaconda.com/download/success))
+
+2. Install and setup Anaconda by running
+
+```shell
+chmod u+x Anaconda3-2024.06-1-Linux-x86_64.sh
+bash Anaconda3-2024.06-1-Linux-x86_64.sh
+eval "$(/home/dejanp/anaconda3/bin/conda shell.bash hook)"
+conda init
+```
+
+Total Anaconda iInstallation size is ~7GB.
+
+### Set up open-source tools/tech
+
+Go inside the cloned hammer repostitory again.
+
+```shell
+cd hammer/e2e
+./scripts/setup-sky130-openroad.sh
+```
+Total download/installation size is ~42GB.
+
+### QuestaSim setup
+
+Last but not least, we are going to install install a free proprietary EDA simulator (currently more useful for these education purposes), Questa Sim:
+
+1. The Questa Sim can be downloaded from the following [link](https://www.intel.com/content/www/us/en/software-kit/795215/questa-intel-fpgas-standard-edition-software-version-23-1.html)
+
+2. After downloading the executable, give it executable permissions, and run it. Select Intel FPGA Starter Edition, accept the license agreement and select the default installation directory. Total installation size is ~4.5GB.
+
+3. Next, register for Intel FPGA Self-Service Licensing Center (SSLC) [here](https://fpgasupport.intel.com/Licensing/license/index.html)
+(click *Enroll for Intel FPGA Self Service Licensing Center (SLLC)*)
+
+4. Click on *Create an Account* and enter your details. Verify your email afterwards.
+
+5. Continue the enrollment process by selecting the *FPGA Engineering* Profession and Submit
+
+6. Now, go to [SSLC](https://fpgasupport.intel.com/Licensing/license/index.htm) again, sign in (click *Already enrolled ? - Sign In here*), and accept the Terms of Use:
+
+7. Set up multi-factor authentification (MFA) by setting up the Authenticator app or your phone number details.
+
+8. Once successfully signed into the Self-Service Licensing Center, click on *Sign up for Evaluation or No-Cost Licenses* and select *Questa*-Intel® FPGA Starter Edition (License: SW-QUESTA)*
+
+9. Check the required checkboxes and add a new computer.
+
+10. Get your hostname (*hostname* command) and MAC address from one of your network cards (*ip a* command) , and fill in as follows:
+    - Computer Name <-> hostname
+    - Computer Type <-> NIC IDs
+    - License Type <_> Fixed
+    - Primary Computer ID <-> MAC address (remove the colons (:))
+
+11. Save this information and generate the license (click *Generate*)
+
+12. Download the license file received via eamil and save it to *~/intelFPGA/license/license.dat*
+
+13. Add the Questa executable path folder to PATH to make it easily accesible in the terminal (you can also add this command to *$HOME/.profile* or *~/.bashrc* make this automatic each time you open a terminal)
+
+```shell
+export PATH="$PATH:~/intelFPGA/23.1std/questa_fse/bin"
+```
+
+14. Point the LM_LICENSE_FILE environment variable to the license file location (best add this command  to *~/.bashrc* )
+
+```shell
+export LM_LICENSE_FILE="~/intelFPGA/license/license.dat"
+```
+
+15. Log out and log back in for the changes to take effect and check if the installation was successfull by running *qhsim*. The Questa Sim GUI should open.
+
+For additional information, refer to the following [document](https://cdrdv2-public.intel.com/703091/ug-20352-703090-703091.pdf).
+
+<!--
+Typically, the Ethernet interface is used, named *ethN*, *enoN*, *enpNsM*, etc. In the absence of an Ethernet interface, you can use a WLAN interface as in the example above, typically named *wlanN*, *wlpNsM*, *wlpNsMfK*, etc.-->
+
+
+### Clone this Repo
+
+You are now ready to complete the lab exercises!
+
+Other links worth visiting and investigating:
+
+<!--https://www.siliconcompiler.com/
+https://openlane2.readthedocs.io/en/latest/
+https://mflowgen.readthedocs.io/en/latest/-->
