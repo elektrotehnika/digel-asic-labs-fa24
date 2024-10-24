@@ -5,20 +5,20 @@ Welcome to the repository for Digital electronics fall 2024 ASIC labs! This repo
 
 ## Table of contents
 - [Digital electronics fall 2024 ASIC labs (asic-labs-fa24)](#asic-labs-fa24)
-  - [Table of contents](#table-of-contents)
-  - [Lab Due Dates](#lab-due-dates)
-  - [Introduction](#introduction)
-    - [CAD Tools](#cad-tools)
-    - [Process Design Kit](#process-design-kit)
-    - [Hammer](#hammer)
-  - [Setup](#setup)
-    - [GitHub Account and Repo](#github-account-and-repo)
-    - [Hammer Setup](#hammer-setup)
-    - [Install Anaconda](#install-anaconda)
-    - [Open-source Tools and Technology Setup](#open-source-tools-and-technology-setup)
-    - [Questa Sim Setup](#questa-sim-setup)
-  - [Conclusion](#conclusion)
-  - [Acknowledgement](#acknowledgement)
+    - [Table of contents](#table-of-contents)
+    - [Lab Due Dates](#lab-due-dates)
+    - [Introduction](#introduction)
+        - [CAD Tools](#cad-tools)
+        - [Process Design Kit](#process-design-kit)
+        - [Hammer](#hammer)
+    - [Setup](#setup)
+        - [GitHub Account and Repo](#github-account-and-repo)
+        - [Hammer Setup](#hammer-setup)
+        - [Install Anaconda](#install-anaconda)
+        - [Open-source Tools and Technology Setup](#open-source-tools-and-technology-setup)
+        - [Questa Sim Setup](#questa-sim-setup)
+    - [Conclusion](#conclusion)
+    - [Acknowledgement](#acknowledgement)
 
 
 ## Lab Due Dates
@@ -181,6 +181,38 @@ and updated using the following commands:
 git pull
 git submodule update --recursive --remote --merge
 ```
+
+Furthermore, in order to be able to do your work and submit lab results, you are required to create a **private** [fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) of the [GitHub repository](https://github.com/elektrotehnika/digel-asic-labs-fa24) of the lab exercises. First, [create](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository) a new private repository on Github and name it *digel-asic-labs-fa24*. Continue by following these commands:
+
+```shell
+# Create a bare clone of the repository. (This is temporary and will be removed so just do it wherever.)
+git clone --bare git@github.com:elektrotehnika/digel-asic-labs-fa24.git
+cd digel-asic-labs-fa24.git
+# Mirror-push your bare clone to your new easytrace repository.
+git push --mirror git@github.com:<your_username>digel-asic-labs-fa24.git
+# Remove the temporary local repository you created in step 1.
+cd ..
+rm -rf digel-asic-labs-fa24.git
+# Clone your digel-asic-labs-fa24 repository to your <lab_work_folder>
+cd <lab_work_folder>
+git clone git@github.com:<your_username>/digel-asic-labs-fa24.git
+# Add the original repo as remote to fetch (potential) future changes.
+# Also make sure you also disable push on the remote.
+git remote add upstream git@github.com:elektrotehnika/digel-asic-labs-fa24.git
+git remote set-url --push upstream DISABLE
+# List your remotes
+git remote -v
+```
+
+Whenever you want to push, do so on `origin` with `git push origin`.
+When you want to pull changes from `upstream` you can just fetch the remote and rebase on top of your work.
+
+```shell
+git fetch upstream
+git rebase upstream/master
+```
+
+<!--Finally, before you start each lab exercise, make sure to [sync](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork) your fork repo with the original repository in order to be up to date.-->
 
 
 ### Hammer Setup
