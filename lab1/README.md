@@ -14,7 +14,7 @@
 - [Lab Deliverables](#lab-deliverables)
     - [Questions](#questions)
         - [Question 1: Setup](#question-1-setup)
-        - [Question 2: Common terminal tasks](#question-2-common-terminal-tasks)
+        - [Question 2: Common Terminal Tasks](#question-2-common-terminal-tasks)
         - [Question 3: Fun with Regular Expressions](#question-3-fun-with-regular-expressions)
         - [Question 4: Understanding File Permissions](#question-4-understanding-file-permissions)
         - [Question 5: Makefile Targets](#question-5-makefile-targets)
@@ -201,12 +201,12 @@ The following links are useful for learning how to make some common customizatio
 
 ## Lab Deliverables
 
-Solutions for lab [questions](#questions) should be commited to electronically using **GitHub**. Submit your answers to the following questions by writing the corresponding answers to `ans/Q*.md` files and performing a `git commit`. If needed, feel free to use [Markdown](https://www.markdownguide.org/cheat-sheet/) for formatting. When you finish with the lab exercise, please `git tag` your last commit with tag name *lab1* in order to mark the deliverable. **Otherwise, the last commit before the lab due date will be chosen as the deliverable.**
+Solutions for lab [questions](#questions) should be submitted electronically using **GitHub**. Submit your answers to the following questions by writing the corresponding answers to `ans/Q*.md` files and performing a `git commit` and  `git push`. If needed, feel free to use [Markdown](https://www.markdownguide.org/cheat-sheet/) for formatting. When you finish with the lab exercise, please `git tag` your last commit with tag name *lab1* in order to mark the deliverable. **Otherwise, the last commit before the lab due date will be chosen as the deliverable.**
 
 
 ### Questions
 
-#### Question 1: Common terminal tasks
+#### Question 1: Common Terminal Tasks
 
 For 1-6 below, submit the command/keystrokes needed to generate the desired result. For 1-4, try generating only the 1 result (no extraneous info).
 
