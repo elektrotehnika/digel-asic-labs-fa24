@@ -54,9 +54,7 @@ Here is a more detailed physical design flow chart.
   <figcaption>Image borrowed from: https://www2.eecs.berkeley.edu/Courses/EECS151
 </figure>
 
-This flow chart shows many of the individual stages digital designers follow in industry. However, it does not show the cyclical nature between individual stages. For example, a bug discovered in *Post-P&R Sim* can provoke *RTL Design* modifications. In general, problems discovered in the **backend** (flow steps after *Synthesis*) sometimes require changes in the **frontend** (flow steps up to *Synthesis*). Therefore, it is imperative that you are well-versed in the mechanics of simulating your designs before even designing anything!
-
-Anyhow, for now the principal stages to pay attention to are: *RTL Design*, *Synthesis*, *Place and Route*.
+This flow chart shows many of the individual stages digital designers follow in industry. However, it does not show the cyclical nature between individual stages. For example, a bug discovered in *Post-P&R Sim* can provoke *RTL Design* modifications. In general, problems discovered in the **backend** (flow steps after *Synthesis*) sometimes require changes in the **frontend** (flow steps up to *Synthesis*). Therefore, it is imperative that you are well-versed in the mechanics of simulating your designs before even designing anything! For now, the principal stages to pay attention to are: *RTL Design*, *Synthesis*, *Place and Route*. The lab exercises will cover the details of each flow step.
 
 
 ### CAD Tools
@@ -156,12 +154,15 @@ In this course, we will use an ASIC design framework developed at Berkeley calle
 
 Hammer consumes serialized configuration files in YAML or JSON format, which are used as intermediate representation (IR) languages between higher-level physical design generators and the underlying scripts that the ASIC design flow tools require.
 
-> **Note:** The version of Hammer used in this course may deviate from the public or "main" Hammer. In the future, reference the public [repository](https://github.com/ucb-bar/hammer) if you are interested in the latest, consistent source.
+> **Note:** The version of Hammer that should be used in this course may deviate from the public or "main" Hammer. After completing the course, reference the public [repository](https://github.com/ucb-bar/hammer) if you are interested in the latest, consistent source.
 
 
 ## Setup
 
 This section covers lab environment setup and installation. It goes without saying that a Linux machine is mandatory for these labs, since this is a requirement for all ASIC design CAD tools. Non-tested alternatives on Windows include [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) or using a hypervisor or virtualizer to run a Linux virtual machine on Linux. The lab content and tools were tested on a Kubuntu 24.04 machine.
+
+> **Note:** In case of any problems, you are encouraged to open a GitHub [issue](https://github.com/elektrotehnika/digel-asic-labs-fa24/issues) or inform your teaching assistant via email (deki@uni.kg.ac.rs).
+
 
 ### GitHub Account and Repo
 
@@ -182,18 +183,18 @@ git pull
 git submodule update --recursive --remote --merge
 ```
 
-Furthermore, in order to be able to do your work and submit lab results, you are required to create a **private** [fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) of the [GitHub repository](https://github.com/elektrotehnika/digel-asic-labs-fa24) of the lab exercises. First, [create](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository) a new private repository on Github and name it *digel-asic-labs-fa24*. Continue by following these commands:
+Furthermore, in order to be able to do your work and submit lab results, you are required to create a private fork of the lab GitHub repo. First, [create](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository) a new **private** (not public!) repository using your Github account and name it *digel-asic-labs-fa24*. Continue by following these commands:
 
 ```shell
 # Create a bare clone of the repository. (This is temporary and will be removed so just do it wherever.)
 git clone --bare git@github.com:elektrotehnika/digel-asic-labs-fa24.git
 cd digel-asic-labs-fa24.git
 # Mirror-push your bare clone to your new easytrace repository.
-git push --mirror git@github.com:<your_username>digel-asic-labs-fa24.git
+git push --mirror git@github.com:<your_username>/digel-asic-labs-fa24.git
 # Remove the temporary local repository you created in step 1.
 cd ..
 rm -rf digel-asic-labs-fa24.git
-# Clone your digel-asic-labs-fa24 repository to your <lab_work_folder>
+# Clone your digel-asic-labs-fa24 repository to your <lab_work_folder> where you plan to work
 cd <lab_work_folder>
 git clone git@github.com:<your_username>/digel-asic-labs-fa24.git
 # Add the original repo as remote to fetch (potential) future changes.
@@ -205,14 +206,17 @@ git remote -v
 ```
 
 Whenever you want to push, do so on `origin` with `git push origin`.
-When you want to pull changes from `upstream` you can just fetch the remote and rebase on top of your work.
+When you want to pull changes from `upstream` you can just fetch the remote and rebase on top of your work. The following commands sync your fork with the original repo:
 
 ```shell
 git fetch upstream
-git rebase upstream/master
+git rebase upstream/main
+git push # if you wish to push upstream changes to your repo
 ```
 
-<!--Finally, before you start each lab exercise, make sure to [sync](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork) your fork repo with the original repository in order to be up to date.-->
+It might be a good idea to periodically check if there are any changes to the upstream repo.
+
+When you finish your GitHub repo setup, please add your [teaching assistant](https://github.com/baywatcher) as [collaborator](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository#inviting-a-collaborator-to-a-personal-repository) and fill in the details in the following [form](https://forms.gle/7cVckR779WDxLsvh8)!
 
 
 ### Hammer Setup
@@ -286,6 +290,23 @@ cd digel/lab/hammer/
 This step will probably take a long time due to the amount and size of the required installs. Total download installation size is ~42GB.
 
 
+### Hammer test
+
+We have installed all the prerequisites needed for running a simple synthesis example with Hammer:
+
+```shell
+cd hammer
+poetry shell
+cd e2e
+sed  "s;~;$HOME;g" configs-env/or_sky130-env.yml
+make design=pass pdk=sky130 tools=or env=or_sky130 build
+make design=pass pdk=sky130 tools=or env=or_sky130 syn
+exit # exit the virtual environment
+```
+
+If everything is installed and set up correctly, those commands should execute without errors.
+
+
 ### Questa Sim Setup
 
 Last but not least, we are going to install a proprietary, but free, EDA simulator (currently more useful for these education purposes), Questa Sim, by following these steps:
@@ -335,13 +356,8 @@ Last but not least, we are going to install a proprietary, but free, EDA simulat
 
 For additional information, refer to this [document](https://cdrdv2-public.intel.com/703091/ug-20352-703090-703091.pdf).
 
-<!--```shell
-chmod u+x QuestaSetup-23.1std.1.993-linux.run
-QuestaSetup-23.1std.1.993-linux.run
-```-->
-<!--
 
-Typically, the Ethernet interface is used, named *ethN*, *enoN*, *enpNsM*, etc. In the absence of an Ethernet interface, you can use a WLAN interface as in the example above, typically named *wlanN*, *wlpNsM*, *wlpNsMfK*, etc.-->
+<!--Typically, the Ethernet interface is used, named *ethN*, *enoN*, *enpNsM*, etc. In the absence of an Ethernet interface, you can use a WLAN interface as in the example above, typically named *wlanN*, *wlpNsM*, *wlpNsMfK*, etc.-->
 
 
 ## Conclusion
@@ -358,6 +374,6 @@ https://mflowgen.readthedocs.io/en/latest/-->
 
 These labs are the result of the long-term work of many EECS151/251 GSIs from UC Berkeley.
 
-For the purposes of this course, it was modified by:
+For the purposes of this course, they were modified and adapted by:
 - Владимир М. Миловановић (Fa2024)
 - Дејан Д. Петковић (Fa2024)
