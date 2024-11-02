@@ -216,7 +216,7 @@ git push # if you wish to push upstream changes to your repo
 
 It might be a good idea to periodically check if there are any changes to the upstream repo.
 
-When you finish your GitHub repo setup, please add your [teaching assistant](https://github.com/baywatcher) as [collaborator](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository#inviting-a-collaborator-to-a-personal-repository) and fill in the details in the following [form](https://forms.gle/7cVckR779WDxLsvh8)!
+When you finish your GitHub repo setup, please add the GitHub account of your [teaching assistant](https://github.com/baywatcher) as a [collaborator](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-access-to-your-personal-repositories/inviting-collaborators-to-a-personal-repository#inviting-a-collaborator-to-a-personal-repository) and fill in the details in this [form](https://forms.gle/7cVckR779WDxLsvh8)!
 
 
 ### Hammer Setup
@@ -298,7 +298,7 @@ We have installed all the prerequisites needed for running a simple synthesis ex
 cd hammer
 poetry shell
 cd e2e
-sed  "s;~;$HOME;g" configs-env/or_sky130-env.yml
+sed -i "s;~;$HOME;g" configs-env/or_sky130-env.yml
 make design=pass pdk=sky130 tools=or env=or_sky130 build
 make design=pass pdk=sky130 tools=or env=or_sky130 syn
 exit # exit the virtual environment
