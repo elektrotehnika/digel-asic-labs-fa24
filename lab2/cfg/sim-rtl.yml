@@ -6,15 +6,8 @@ sim.inputs:
     - "src/addertree.v"
     - "src/fir_tb.v"
   timescale: "1ns/10ps"
-  options:
-    - "-notice"
-    - "-line"
-    - "+lint=all,noVCDE"
-    - "+v2k"
-    - "-debug"
-    - "-sverilog"
   top_module: "fir"
   tb_name: "fir_tb"
+  tb_dut: "dut"
   defines: 
     - "CLOCK_PERIOD=1.00"
-  defines_meta: append

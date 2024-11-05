@@ -1,19 +1,7 @@
-# Technology Setup
 # Technology used is Sky130
-vlsi.core.technology: hammer.technology.sky130
 technology.sky130:
-  sky130A: "/home/ff/eecs151/fa23/pdk_mod/sky130/pdk/sky130A"  
-  sram22_sky130_macros: "/home/ff/eecs151/fa23/sky130_srams/sram22_sky130_macros"  
-
-vlsi.core.max_threads: 4
-
-# General Hammer Inputs
-
-vlsi.inputs.supplies.VDD: "1.8 V"
-
-# Hammer will auto-generate a CPF for simple power designs; see hammer/src/hammer-vlsi/defaults.yml for more info
-vlsi.inputs.power_spec_mode: "auto"
-vlsi.inputs.power_spec_type: "cpf"
+  sky130A: "~/open_pdks/sky130/sky130A/"
+  sram22_sky130_macros: "~/sram22_sky130_macros"
 
 # Specify the setup and hold corners for Sky130
 vlsi.inputs.mmmc_corners: [
@@ -21,41 +9,33 @@ vlsi.inputs.mmmc_corners: [
   {name: "ff_n40C_1v95", type: "hold", voltage: "1.95 V", temp: "-40 C"}
 ]
 
-# SRAM Compiler compiler options
-vlsi.core.sram_generator_tool: "hammer.technology.sky130.sram_compiler"
 # Specify this since we are not using macrocompiler
-vlsi.inputs.sram_parameters: "/home/ff/eecs151/fa23/hammer/hammer/technology/sky130/sram-cache.json"  
-vlsi.inputs.sram_parameters_meta: ["transclude", "json2list"]
+vlsi.inputs:
+  supplies.VDD: "1.8 V"
+  power_spec_mode: "auto"
+  power_spec_type: "cpf"
+  sram_parameters: "../../hammer/hammer/technology/sky130/sram-cache.json"
+  sram_parameters_meta: ["transclude", "json2list"]
 
-# Tool options. Replace with your tool plugin of choice.
-# Genus options
-vlsi.core.synthesis_tool: "hammer.synthesis.genus"
-synthesis.genus.version: "191"
+vlsi.core:
+  technology: "hammer.technology.sky130"
+  sim_tool: "hammer.sim.questa"
+  synthesis_tool: "hammer.synthesis.yosys"
+  par_tool: "hammer.par.openroad"
+  power_tool: "hammer.power.voltus"
+  drc_tool: "hammer.drc.klayout"
+  lvs_tool: "hammer.lvs.netgen"
+  sram_generator_tool: "hammer.technology.sky130.sram_compiler"
+  build_system: make
+  max_threads: 4
 
-# Innovus options
-vlsi.core.par_tool: "hammer.par.innovus"
-par.innovus.version: "191" # TODO
-par.innovus.design_flow_effort: "standard"
+# Place & route setup
 par.inputs.gds_merge: true
 
-# Calibre options
-vlsi.core.drc_tool: "hammer.drc.calibre"
-vlsi.core.lvs_tool: "hammer.lvs.calibre"
-drc.calibre.calibre_drc_bin: "/share/instsww/mgc/CALIBRE/bin/calibre"
-drc.calibre.calibredrv_bin: "/share/instsww/mgc/CALIBRE/bin/calibredrv"
-drc.calibre.MGC_HOME: "/shared/instsww/mgc"
-lvs.calibre.calibre_lvs_bin: "/share/instsww/mgc/CALIBRE/bin/calibre"
-lvs.calibre.calibredrv_bin: "/share/instsww/mgc/CALIBRE/bin/calibredrv"
-lvs.calibre.v2lvs_bin: "/share/instsww/mgc/CALIBRE/bin/v2lvs"
-lvs.calibre.MGC_HOME: "/shared/instsww/mgc"
-
-# VCS options
-vlsi.core.sim_tool: "hammer.sim.vcs"
-sim.vcs.version: "P-2019.06"  # TODO
-
-# Voltus options
-vlsi.core.power_tool: "hammer.power.voltus"
-power.voltus.version: "181"  # TODO
-
-# Generate Make include to aid in flow 
-vlsi.core.build_system: make
+# Tool binaries
+synthesis.yosys.yosys_bin: ~/.conda-yosys/bin/yosys
+par.openroad.openroad_bin: ~/.conda-openroad/bin/openroad
+par.openroad.klayout_bin: ~/.conda-klayout/bin/klayout
+drc.klayout.klayout_bin: ~/.conda-klayout/bin/klayout
+drc.magic.magic_bin: ~/.conda-signoff/bin/magic
+lvs.netgen.netgen_bin: ~/.conda-signoff/bin/netgen
