@@ -1,41 +1,64 @@
-`timescale 1 ns /  100 ps
+// Defines
+`timescale 1ns/1ps
+// CLOCK_PERIOD is defined in a .yml file
 
+// Finite Impulse Response module testbench (with file inputs)
 module fir_tb_file();
 
-wire signed [3:0] In;
-wire signed [15:0] Out;
-reg clk;
+  // FIR inputs
+  reg clk;
+  reg rst;
+  reg signed [3:0] In;
+  // FIR outputs
+  wire signed [15:0] Out;
 
-reg [4:0] index_counter;
-initial index_counter = 0;
-wire signed [15:0] Out_correct;
-reg signed [15:0] Out_correct_array [25:0];
-reg signed [3:0] input_array [25:0];
+  // FIR instance (Design Under Test)
+  fir dut(.In (In ),
+          .clk(clk),
+          .Out(Out),
+          .rst(rst)
+  );
 
-initial clk = 0;
-always #(`CLOCK_PERIOD/2) clk <= ~clk;
+  // Clock generation
+  initial clk = 0;
+  always #(`CLOCK_PERIOD/2) clk <= ~clk;
 
-fir dut ( .In(In), .clk(clk), .Out(Out) );
+  // Main test process
+  initial begin
+    // Start test
+    $display("Test started.");
+    // Wait for 26 clock cycles
+    repeat (26) @(negedge clk);
+    // Finish test
+    $display("Test started.");
+    $finish;
+  end
 
+  // Collect FIR inputs and expected FIR outputs
+  reg signed [3:0] input_array [25:0];
+  reg signed [15:0] Out_correct_array [25:0];
+  initial begin
+    $readmemb("../src/data_b.txt", Out_correct_array);
+    $readmemb("../src/input.txt", input_array);
+  end
 
-
-initial begin
-$vcdpluson;
- repeat (26) @(negedge clk);
-$vcdplusoff;
-$finish;
-
-end
-
-initial begin
-    $readmemb("../../src/data_b.txt", Out_correct_array);
-    $readmemb("../../src/input.txt", input_array);
-end
-assign Out_correct = Out_correct_array[index_counter];
-assign In = input_array[index_counter];
-always @(negedge clk) begin
+  // Check if FIR filter behaves as expected
+  integer index_counter = 0;
+  assign In = input_array[index_counter];
+  wire signed [15:0] Out_correct;
+  assign Out_correct = Out_correct_array[index_counter];
+  always @(negedge clk) begin
     $display($time, ": Out should be %d, got %d", Out_correct, Out);
+    if (Out_correct != Out)
+      $error("SIMULATION MISMATCH");
     index_counter <= index_counter + 1;
-end
+  end
+
+  // VCD generation
+  initial begin
+    $dumpfile ("build/sim-rundir/fir_tb.vcd");
+    $dumpvars (0, dut);
+    #0;
+  end
 
 endmodule
