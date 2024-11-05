@@ -14,7 +14,7 @@ vlsi.inputs:
   supplies.VDD: "1.8 V"
   power_spec_mode: "auto"
   power_spec_type: "cpf"
-  sram_parameters: "../../hammer/hammer/technology/sky130/sram-cache.json"
+  sram_parameters: "HAMMER_PATH/hammer/technology/sky130/sram-cache.json"
   sram_parameters_meta: ["transclude", "json2list"]
 
 vlsi.core:

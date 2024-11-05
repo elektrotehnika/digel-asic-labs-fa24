@@ -7,7 +7,6 @@ module fir_tb_file();
 
   // FIR inputs
   reg clk;
-  reg rst;
   reg signed [3:0] In;
   // FIR outputs
   wire signed [15:0] Out;
@@ -15,8 +14,7 @@ module fir_tb_file();
   // FIR instance (Design Under Test)
   fir dut(.In (In ),
           .clk(clk),
-          .Out(Out),
-          .rst(rst)
+          .Out(Out)
   );
 
   // Clock generation
@@ -30,7 +28,7 @@ module fir_tb_file();
     // Wait for 26 clock cycles
     repeat (26) @(negedge clk);
     // Finish test
-    $display("Test started.");
+    $display("Test finished.");
     $finish;
   end
 

@@ -40,19 +40,25 @@ Simulation is a fundamental step in ASIC design and digital design in general. D
 
 ## Setup
 
-In case you haven't done the main lab [Setup](../README.md#setup) successfully, please do so before you continue in order to be able to follow this lab and submit your results. Also, please remember to regularly update (sync) your lab repo with the latest upstream changes.
+In case you haven't done the main lab [Setup](../README.md#setup) successfully, please do so before you continue in order to be able to follow this lab and submit your results. Also, please remember to regularly update (sync) your lab repo with the latest upstream changes, as well as the *digel* repo (with submodules!) in order to include the latest Hammer changes.
 
 Prior to running any commands, you need to activate a Poetry virtual environment with a Hammer (*hammer-vlsi*) installation:
 
 ```shell
-source ../../hammer/.venv/bin/activate
+# Replace <hammer_path> with your Hammer installation path
+source <hammer_path>/.venv/bin/activate
 hammer-vlsi -h
 ```
 
-Also, prepend your $HOME path to the Hammer configuration variables in `cfg/sky130.yml`:
+Also, perform some text transformations to prepare the environment for the lab exercise:
 
 ```shell
+cd lab2
+# Replace <hammer_path> with your Hammer installation path
+sed -i "s;HAMMER_PATH;<hammer_path>;g" Makefile
+sed -i "s;HAMMER_PATH;<hammer_path>;g" cfg/sky130.yml
 sed -i "s;~;$HOME;g" cfg/sky130.yml
+
 ```
 
 
