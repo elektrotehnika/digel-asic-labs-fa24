@@ -97,7 +97,7 @@ module fir_tb();
 
   // VCD generation
   initial begin
-    $dumpfile ("build/sim-rundir/fir_tb.vcd");
+    $dumpfile ("fir_tb.vcd");
     $dumpvars (0, dut);
     #0;
   end
