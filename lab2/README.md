@@ -21,7 +21,7 @@
         - [Question 4: Evaluate Gate-level Simulations](#question-4-evaluate-gate-level-simulations)
         - [Question 5: SDF and Visualization of Setup Time Violations](#question-5-sdf-and-visualization-of-setup-time-violations)
         - [Question 6: Fixing Hold Times](#question-6-fixing-hold-times)
-        - [Question 7: Analyzing Power Reports](#question-7-analyzing-power-reports)
+
 
 ## Overview
 
