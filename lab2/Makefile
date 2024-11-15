@@ -77,6 +77,7 @@ MAKE = make
 
 .PHONY: sim-rtl
 sim-rtl: $(HAMMER_D_MK)
+	# Ommit "=none" in case "--update" does not allow an argument; generally "--update[=none]" might be redundant
 	cp --update=none ~/share/pdk/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v $(OBJ_DIR)/tech-sky130-cache/primitives.v
 	cp --update=none ~/share/pdk/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
 	cp HAMMER_PATH/e2e/tech-sky130-cache/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
