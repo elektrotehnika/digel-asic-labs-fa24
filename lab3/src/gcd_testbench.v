@@ -42,7 +42,7 @@ module gcd_testbench;
   wire        result_val;
   reg        result_rdy;
   
-  gcd #(16) gcd
+  gcd /*#(16)*/ gcd
   ( 
     .clk              (clk),
     .reset            (reset),
@@ -64,7 +64,6 @@ module gcd_testbench;
   //--------------------------------------------------------------------
 
   initial begin
-    $vcdpluson;
     // Initial values
     src_val = 0;
     result_rdy = 1;
@@ -92,7 +91,6 @@ module gcd_testbench;
       end
     end
 
-    $vcdplusoff;
     $finish;
   end
 
@@ -106,7 +104,6 @@ module gcd_testbench;
     cycle_count = cycle_count + 1;
     if (cycle_count >= 1000) begin
       $display("TIMEOUT");
-	$vcdplusoff;
       $finish;
     end
   end

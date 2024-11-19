@@ -15,5 +15,6 @@ sim.inputs:
     - "-debug"
   top_module: "gcd_testbench"
   tb_name: "gcd_testbench"
+  tb_dut: "gcd"
   defines: 
     - "CLOCK_PERIOD=20.00000"

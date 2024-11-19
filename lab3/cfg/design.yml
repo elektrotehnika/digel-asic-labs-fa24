@@ -34,7 +34,7 @@ vlsi.inputs.placement_constraints:
 vlsi.inputs.pin_mode: generated
 vlsi.inputs.pin.generate_mode: semi_auto
 vlsi.inputs.pin.assignments: [
-  {pins: "*", layers: ["M5", "M7"], side: "bottom"}
+  {pins: "*", layers: ["met3", "met5"], side: "bottom"}
 ]
 
 
