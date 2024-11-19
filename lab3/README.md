@@ -81,7 +81,7 @@ Synthesis is the transformation of RTL, typically Verilog or VHDL, into a gate-l
 The first step in this process is the compilation and elaboration of RTL [1].
 From [IEEE Std 1800-2017](https://ieeexplore.ieee.org/document/8299595), **compilation** is the process of reading RTL and analyzing it for syntax and semantic errors.
 **Elaboration** is the subsequent process of expanding instantiations and hierarchies, parsing parameter values, and establishing netlist connectivity.
-Elaboration in *Yosys* returns a generic netlist formed from generic gates. <!-- TODO: check this -->
+Elaboration, followed by generic synthesis, returns a generic netlist formed from generic gates.
 "Generic" in this context means that the design is represented structurally in terms of gates such as `\$_SDFF_PP0_` and `\$_NOR_` and that these gates have no physical correlation to the gates provided in the standard cell library associated with a technology (or PDK).
 
 
@@ -163,7 +163,7 @@ Beyond this, there are a slew of other STA topics, including correlated clocks, 
 
 #### Yosys Disadvantages
 
-Unfortunately, unlike its proprietary alternatives, the tool we use for synthesis, Yosys lacks the support for STA and SDF generation, which is a requirement for timing annotated gate-level simulation. That is why, in this lab, we are going to be using OpenROAD for the generation of the post-synthesis SDF file and additional useful reports.
+Unfortunately, unlike its proprietary alternatives, the tool we use for synthesis, Yosys, currently lacks the support for STA and SDF generation, which is a requirement for timing-annotated gate-level simulation. That is why, in this lab, we are going to be using OpenROAD for the generation of the post-synthesis SDF file and additional useful reports.
 
 
 ## Synthesis Environment
@@ -270,6 +270,11 @@ We have provided a circuit described in Verilog that computes the greatest commo
 
 </center> 
 
+Separating files and logic into control and datapath is generally a good idea due to various reasons:
+- Modularity and scalability: Focusing on the data operations and control logic independently simplifies the design process and makes maintaining, updating, verification, and debugging much easier.
+- Reusability and parallelism: Datapath components can be reused across different designs and also designed to exploit parallelism, which enhances efficiency and improves performance.
+- Optimization and efficiency: Synthesis can apply different optimizations to the datapath (say, for speed and area) and control logic (say, for state minimization) and map RTL code into target technology more efficiently.
+
 Unlike the FIR filter from the last lab, in which the testbench constantly provided stimuli, the GCD algorithm has a variable latency. In other words, the number of cycles for the module to compute the output is **not** constant. This is common for many modules; therefore, they must indicate when the output is valid and when they are ready to receive new inputs. This is accomplished through a ready-valid interface. A block diagram and module declaration of the GCD top level are presented below:
 
 <p align="center">
@@ -291,7 +296,11 @@ module gcd#( parameter W = 16 )
 );
 ```
 
-<!-- On the `operands` boundary, nothing will happen until GCD is ready to receive data (`operands_rdy`).
+
+<details markdown='block'>
+<summary>GCD Functionality Details</summary>
+
+On the `operands` boundary, nothing will happen until GCD is ready to receive data (`operands_rdy`).
 When this happens, the testbench will place data on the operands (`operands_bits_A` and `operands_bits_B`), but GCD will not start until the testbench declares that these operands are valid (`operands_val`).
 Then GCD will start.
 
@@ -299,17 +308,9 @@ The testbench needs to know that GCD is not done. This will be true as long as `
 Also, even if GCD is finished, it will hold the result until the testbench is prepared to receive the data (`result_rdy`).
 The testbench will check the data when GCD declares the results are valid by setting `result_val` to 1.
 
-The contract is that if the interface declares it is ready while the other side declares it is valid, the information must be transferred. -->
+The contract is that if the interface declares it is ready while the other side declares it is valid, the information must be transferred.
 
-<!-- TODO: say why datapath + control -->
-<!-- Open `src/gcd.v`. This is the top-level module of GCD and just instantiates its submodules.
-Separating files into control and datapath is generally a good idea.
-Open `src/gcd_datapath.v`. This file stores the operands and contains the logic necessary to implement the algorithm (subtraction and comparison).
-Open `src/gcd_control.v`. This file contains a state machine that handles the ready-valid interface and controls the mux selects in the datapath.
-Open `src/gcd_testbench.v`. This file sends different operands to GCD and checks to see if the correct GCD was found. Make sure you understand how this file works.
-Note that the inputs are changed on the negative edge of the clock.
-This will prevent hold time violations for gate-level simulation, because once a clock tree has been added, the input flops will register data at a time later than the testbench’s rising edge of the clock. -->
-
+</details>
 
 ## RTL-Simulation
 
@@ -346,7 +347,7 @@ Hammer abstracts some details of the synthesis process. Let's examine step by st
 
 Each step listed in the table is a separate step executed when `make syn` is run and represents a step or sequence of steps *Yosys* takes for the full synthesis process. Now, synthesize the design:
 
-1. Generate the *hammer.d* supplement Makefile. This was also the first step in lab 2, but in this lab we'll learn what this file is. The *hammer.d* file contains a list of design-specific targets based upon the constraints we have provided inside the YAML files, in our case the GCD. Any of these targets can be run to execute different stages of the VLSI flow (we will take advantage of more targets in future labs). Visit the Hammer Read-The-Docs for more information on the [Hammer-Flow](https://hammer-vlsi.readthedocs.io/en/latest/Hammer-Flow/index.html).
+1. Generate the *hammer.d* supplement Makefile (you might not have to do this step if you already ran `make sim-rtl`). This was also the first step in lab 2, but in this lab we'll learn what this file is. The *hammer.d* file contains a list of design-specific targets based upon the constraints we have provided inside the YAML files, in our case the GCD. Any of these targets can be run to execute different stages of the VLSI flow (we will take advantage of more targets in future labs). Visit the Hammer Read-The-Docs for more information on the [Hammer-Flow](https://hammer-vlsi.readthedocs.io/en/latest/Hammer-Flow/index.html).
 
     ```
     make buildfile
@@ -385,10 +386,10 @@ Feel free to see what's behind the curtain and analyze the TCL script Hammer gen
 ### Reports
 
 The following reports generated as output products of synthesis:
-- in *build/syn-rundir/*:
+- in *build/syn-rundir*:
     - *gcd.synth_check.rpt*
     - *gcd.synth_stat.txt*
-- in *build/timing-syn-rundir/reports/*:
+- in *build/timing-syn-rundir/reports*:
     - *gcd_sta.checks.max.setup.rpt*
     - *gcd_sta.checks.min.hold.rpt*
     - *gcd_sta.checks.unconstrained.rpt*
@@ -555,13 +556,17 @@ A simple testbench skeleton is also provided to you. You should change it to add
 
 To exercise your skills understanding synthesis and how to interact with *Yosys* using Hammer, synthesize your design at two separate design points:
 
-1. Instantiate your divider to be a 4-bit divider and synthesize it. Copy the *reports* subdirectory as *report_4-bit*.
-2. Instantiate your divider to be a 32-bit divider and synthesize it. Copy the *reports* subdirectory as *report_32-bit*.
+1. Instantiate your divider to be a 4-bit divider and synthesize it. Copy all post-syntesis reports to `ans/Q5/rpt4` directory.
+2. Instantiate your divider to be a 32-bit divider and synthesize it. Copy all post-syntesis reports to `ans/Q5/rpt32` directory.
 
 Refer to the YAML files and general flow from the GCD example design.
 
 
 ## Questions
+
+Solutions for lab questions should be submitted electronically using **GitHub**. Submit your answers to the following questions by writing the corresponding answers to `ans/Q*/Q*.md` (use the `ans/Q*/` directory for additional files) files and performing a `git commit` and  `git push`. Feel free to use [Markdown](https://www.markdownguide.org/cheat-sheet/) for formatting. When you finish with the lab exercise, please `git tag` your last commit with the tag name *lab3* in order to mark the deliverable. **Otherwise, the last commit before the lab due date will be chosen as the deliverable.**
+
+Also, remember to include a short explanation of each answer (2-4 sentences) with your responses to the lab questions. When asked to write Verilog, include the module definition. There is no single solution, so individual solutions will vary. **Collaboration is fine, but your solution should be your own.**
 
 
 ### Question 1: Understanding the Algorithm
@@ -587,32 +592,31 @@ By reading the provided Verilog code and/or viewing the RTL simulations, demonst
 
 ### Question 2: GCD Reports Questions
 
-1. Which report would you look at to find the total number of each different standard cell that the design contains? Hint: Take a look in `build/syn-rundir/reports`.
+1. Which report would you look at to find the total number of each different standard cell that the design contains?
    
 2. Which report contains area breakdowns by modules in the design?
-  
-3. What is the cell used for `A_register/q_reg[7]`? How much leakage power does `A_register/q_reg[7]` contribute? How did you find this?
+
+3. What is the total power consumption of the design? Which types of power are reported?
+
+4. Open `build/syn-rundir/gcd.yosys.v`. What standard cell is used for `A_register/q_reg[7]`? Commit the entire instantiated cell.
+
+5. *(optional)* Can you find the exact same cell instantiated in `build/syn-rundir/gcd.mapped.v`?
 
 
 ### Question 3: GCD Synthesis Questions
 
-1. Looking at the total number of instances of sequential cells synthesized and the number of `reg` definitions in the Verilog files, are they consistent? If not, why?
+1. Reduce the clock period (in `design.yml`) by the amount of slack in the timing report. Now run the synthesis flow again. Does it still meet timing? Why or why not? Does the critical path stay the same? If not, what changed?
 
-2. Reduce the clock period (in `design.yml`) by the amount of slack in the timing report. Now run the synthesis flow again. Does it still meet timing? Why or why not? Does the critical path stay the same? If not, what changed?
+2. *(optional)* Looking at the total number of instances of sequential cells synthesized and the number of `reg` definitions in the Verilog files, are they consistent? If not, why? What is the total number of flip-flops in the design?
 
 
 ### Question 4: Delay Questions
 
-Check the waveforms in Questa.
+Load the post-synthesis simulation waveforms in Questa.
 
-```
-cd build/sim-rundir
-qhsim -do "vsim -view vsim.wlf; add wave *
-```
+1. Report the clk-q delay of `state[0]` in `GCDctrl0` at 350 ns and submit a screenshot of the waveform(s) showing how you found this delay.
 
-1. Report the clk-q delay of `state[0]` in `GCDctrl0` at 350 ns and submit a screenshot of the waveforms showing how you found this delay.
-
-2. Which line in the SDF file specifies this delay, and what is the delay?
+2. Which line in the SDF file specifies this delay, and what is the delay? Commit the line, CELLTYPE, INSTANCE and DELAY description.
 
 3. Is the delay from the waveform the same as from the SDF file? Why or why not?
 
@@ -629,57 +633,5 @@ qhsim -do "vsim -view vsim.wlf; add wave *
    - total cell area
    - maximum operating frequency in MHz from the reports (you might need to rerun synthesis multiple times to determine the maximum achievable frequency)
 
-3. Commit your divider code and testbench to `ans/Q5/`. Add comments to explain your testbench and why it provides sufficient coverage for your divider module. You don't have to run post-synthesis simulation for Question 5. That is, run `make sim-rtl` to verify your testbench.
+3. Commit your divider code and testbench to `ans/Q5/src` and all relevant YAML files to `ans/Q5/cfg`. Add comments to explain your testbench and why it provides sufficient coverage for your divider module. You don't have to run post-synthesis simulation for Question 5. That is, run `make sim-rtl` to verify your testbench. For this question, points will be given not only for design functionality but also for code/comment clarity and conciseness.
 
-
-<!-- 
-## WASTE
-Hammer abstracts some details of the synthesis process. Let's examine step-by-step what each step Hammer takes does to gain an intuition of what steps Genus performs:
-
-1. In the *skel* directory, run the following command.
-```
-make buildfile
-```
-This generates another Makefile, *hammer.d* in the *build* subdirectory, specific to the GCD design with unique targets. We use some of these targets to run individual synthesis steps in the following commands.
-
-
-2. Next, we need to provide Genus with the technology libraries from the PDK, constraints for the synthesis process (from *design.yml*), and the source code for our design. Lastly, and critically, the step always commands *Genus* to elaborate our design.
-```
-make redo-syn HAMMER_EXTRA_ARGS="--stop_after_step init_environment"
-```
-
-3. This step is the **generic synthesis** step. In this step, Genus converts our RTL read
-in the previous step into an intermediate format, made up of technology-independent generic gates. These
-gates are purely for gate-level functional representation of the RTL we have coded, and are going
-to be used as an input to the next step. This step also performs logical optimizations on our design
-to eliminate any redundant/unused operations.
-```
-    make redo-syn HAMMER_EXTRA_ARGS="--stop_after_step syn_generic"
-```
-
-4. This step is the **mapping** step. Genus takes its own generic gate-level output and converts it to
-our SKY130-specific gates. This step further optimizes the design given the gates in our technology.
-That being said, this step can also increase the number of gates from the previous step as not
-all gates in the generic gate-level Verilog may be available for our use and they may need to be
-constructed using several, simpler gates.
-```
-    make redo-syn HAMMER_EXTRA_ARGS="--stop_after_step syn_map"
-```
-
-5. In some designs, the pins in certain cells are hardwired to 0 or 1, which requires a tie-off cell. This step adds these cells.
-```
-    make redo-syn HAMMER_EXTRA_ARGS="--stop_after_step add_tieoffs"
-```
-
-6.  This step is purely for the benefit of the designer. For some designs, we may need to have a list
-of all the registers in our design. In this lab, the list of regs is used in post-synthesis simulation to
-generate the `force_regs.ucli`, which sets initial states of registers.
-```
-    make redo-syn HAMMER_EXTRA_ARGS="--stop_after_step write_regs"
-```
-
-
-7. The reports we have seen in the previous section are generated during this step.
-```
-    make redo-syn HAMMER_EXTRA_ARGS="--stop_after_step generate_reports"
-``` -->

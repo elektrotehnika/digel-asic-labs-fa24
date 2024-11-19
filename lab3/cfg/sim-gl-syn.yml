@@ -6,14 +6,6 @@ sim.inputs:
   level: "syn"
   timing_annotated: true
   timescale: "1ns/10ps"
-  # options:
-  #   - "-notice"
-  #   - "-line"
-  #   - "+lint=all"
-  #   - "+v2k"
-  #   - "-debug"
-  #   - "+neg_tchk"
-  #   - "-sverilog"
   top_module: "gcd"
   tb_name: "gcd_testbench"
   tb_dut: "gcd"

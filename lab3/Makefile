@@ -83,9 +83,7 @@ MAKE = make
 
 .PHONY: sim-rtl
 sim-rtl: $(HAMMER_D_MK)
-	# Ommit "=none" in case "--update" does not allow an argument; generally "--update[=none]" might be redundant
 	cp --update $(pdk_dir)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v $(OBJ_DIR)/tech-sky130-cache/primitives.v
-	cp --update $(pdk_dir)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
 	cp --update $(hammer_dir)/e2e/tech-sky130-cache/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
 	$(HAMMER_EXEC) -p $(TECH_CONF) -p $(SIM_RTL_CONF) --obj_dir $(OBJ_DIR) sim
 
@@ -96,13 +94,8 @@ sim-rtl: $(HAMMER_D_MK)
 .PHONY: sim-gl-syn
 sim-gl-syn: $(HAMMER_D_MK) $(INPUT_SIM_GL_SYN_DB)
 	cp --update $(pdk_dir)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v $(OBJ_DIR)/tech-sky130-cache/primitives.v
-	cp --update $(pdk_dir)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
 	cp --update $(hammer_dir)/e2e/tech-sky130-cache/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
 	$(HAMMER_EXEC) -p $(TECH_CONF) -p $(SIM_GL_SYN_CONF) -p $(INPUT_SIM_GL_SYN_DB) --obj_dir $(OBJ_DIR) sim
-
-# [ -f ./myfile ]
-#test -e $(OBJ_DIR)/timing-syn-rundir/$(TOP).par.sdf.gz &&
-
 
 #########################################################################################e
 # Post-PAR Gate-level Sim

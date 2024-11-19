@@ -36,5 +36,3 @@ vlsi.inputs.pin.generate_mode: semi_auto
 vlsi.inputs.pin.assignments: [
   {pins: "*", layers: ["met3", "met5"], side: "bottom"}
 ]
-
-
