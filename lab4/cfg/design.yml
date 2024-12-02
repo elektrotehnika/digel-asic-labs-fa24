@@ -1,10 +1,10 @@
 # Specify Global Variables
-gcd.clockPeriod: &CLK_PERIOD "5ns"
+gcd.clockPeriod: &CLK_PERIOD "10ns"
 gcd.verilogSrc: &VERILOG_SRC
-  - "src/gcd_coprocessor.v"
+  - "src/gcd.v"
   - "src/gcd_datapath.v"
   - "src/gcd_control.v"
-  - "src/fifo.v"
+  - "src/EECS151.v"
 
 # Specify clock signals
 vlsi.inputs.clocks: [
@@ -13,28 +13,22 @@ vlsi.inputs.clocks: [
 
 # Synthesis Constraints
 synthesis.inputs:
-  top_module: "gcd_coprocessor"
+  top_module: "gcd"
   input_files: *VERILOG_SRC
 
 # Placement Constraints
 vlsi.inputs.placement_constraints:
-  - path: "gcd_coprocessor"
+  - path: "gcd"
     type: "toplevel"
     x: 0
     y: 0
-    width: 600
-    height: 600
+    width: 300
+    height: 300
     margins:
       left: 10
       right: 10
       top: 10
       bottom: 10
-  - path: "gcd_coprocessor/GCDdpath0"
-    type: "placement"
-    x: 200
-    y: 200
-    width: 200
-    height: 200
 
 # Pin placement constraints
 vlsi.inputs.pin_mode: generated

@@ -65,7 +65,7 @@ module gcd_coprocessor_testbench;
 
   // Apply stimulus
   initial begin
-    $vcdpluson;
+    // $vcdpluson;
     // Initial values
     reset = 0;
     operands_val = 0;
@@ -92,7 +92,7 @@ module gcd_coprocessor_testbench;
     end
 
     @(posedge done);
-    $vcdplusoff;
+    // $vcdplusoff;
     $finish;
   end
 

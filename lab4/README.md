@@ -1,89 +1,117 @@
-# ASIC Lab 4: Floorplanning, Placement, Power, and CTS
-<p align="center">
-Prof. John Wawrzynek
-</p>
-<p align="center">
-TA: Kevin He, Kevin Anderson
-</p>
-<p align="center">
-Department of Electrical Engineering and Computer Science
-</p>
-<p align="center">
-College of Engineering, University of California, Berkeley
-</p>
+# ASIC Lab 4: Place and Route
 
+## Table of Contents
+- [ASIC Lab 4: Place and Route](#asic-lab-4-place-and-route)
+    - [Table of Contents](#table-of-contents)
+    - [Overview](#overview)
+    - [FIFO](#fifo)
+    - [Standard Cell](#standard-cell)
+    - [VLSI](#vlsi)
+    - [Place and Route](#place-and-route)
+        - [Floorplanning](#floorplanning)
+        - [Power Planning](#power-planning)
+        - [Placement](#placement)
+        - [Clock Tree Synthesis (CTS)](#clock-tree-synthesis-cts)
+            - [Pre-CTS Optimization](pre-cts-optimization)
+            - [Clock Tree Clustering and Balancing](#clock-tree-clustering-and-balancing)
+            - [Post-CTS Optimization](#post-cts-optimization)
+        - [Routing](#routing)
+        - [Signoff](#signoff)
+    - [OpenROAD](#openroad)
+    - [Place and Route with Hammer](#place-and-route-with-hammer)
+        - [Placement Constraints](#placement-constraints)
+        - [Power Constraints](#power)
+    - [Place and Route with OpenROAD](#place-and-route-with-openroad)
+        - [Visualising the Results](#visualising-the-results)
+    - [GCD Accelerator](#gcd-accelerator)
+        - [Design](#design)
+        - [Testbench](#testbench)
+        - [Place and Route](#place-and-route)
+    - [Questions](#questions)
+        - [Question 1: Interpreting GCD PAR Reports](#question-1-interpreting-gcd-par-reports)
+        - [Question 2: Understanding PAR Steps](#question-2-understanding-par-steps)
+        - [Question 3: GCD Coprocessor Design](#question-3-gcd-coprocessor-design)
+        - [Question 4: Parallelization](#question-4-parallelization)
+        - [Question 5: Trade-offs](#question-5-trade-offs)
 
+<!-- - [Optional Exercise: Step-by-Step with OpenROAD](#optional-exercise-step-by-step-with-OpenROAD)-->
+<!-- - [Arithmetic Logic Unit (ALU)](#arithmetic-logic-unit) -->
+<!--### Question 6: (optional) Automated Flow-->
 
 ## Overview
-**Setup:**
-Pull lab4 from the staff skeleton:
-```
-cd /home/tmp/<your-eecs-username>
-cd asic-labs-<github-username>
-git pull skeleton main
-git push -u origin main
-```
-Setup CAD tools environment:
-```
-source /home/ff/eecs151/asic/eecs151.bashrc
-```
-**Objective:** 
-In this lab, you will be introduces to place and route. This stage is digital design following synthesis. It takes the netlist, efficiently places cells, and creates routes or connections between cells to implement your design. This lab consists of three parts:
-1. For the first part, you will be writing a GCD coprocessor that could be included alongside a general-purpose CPU (like your final project)
-2. You will then learn how the tools can create a floorplan, route power straps, place standard cells, perform timing optimizations, and generate a clock tree for your design (only the placement portion of place and route)
-3. Finally, you will get a slight head start on your project by writing part of the ALU
 
-This lab contains a series of conceptual questions labeled as *thought experiments.* These will not be graded and should not be included in your lab report. They are meant to deepen your understanding of the material, and serve as discussion points during your lab section.
+**Setup:**
+In case you haven't done the main lab [Setup](../README.md#setup) successfully, please do so before you continue in order to be able to follow this lab and submit your results. Also, please remember to regularly update (sync) your lab repo with the latest upstream changes, as well as the *digel* repo (with submodules!) in order to include the latest Hammer changes.
+
+Prior to running any commands, you need to activate a Poetry virtual environment with a Hammer (*hammer-vlsi*) installation:
+
+```shell
+# Replace <hammer_path> with your Hammer installation path
+source <hammer_path>/.venv/bin/activate
+hammer-vlsi -h
+```
+
+Also, perform some text transformations to prepare the environment for the lab exercise:
+
+```shell
+cd lab4
+# Replace <hammer_path> with your Hammer installation path
+sed -i "s;HAMMER_PATH;<hammer_path>;g" Makefile
+sed -i "s;HAMMER_PATH;<hammer_path>;g" cfg/sky130.yml
+sed -i "s;~;$HOME;g" cfg/sky130.yml
+```
+
+> Note: Before continuing, in order to save time, you can open another terminal window, activate the Poetry environment, and try to run the commands from the first paragraph of [this section](#place-and-route-with-openroad). After `make par` starts making routing iterations, leave it running and continue reading the lab README.
+
+
+**Objective:** 
+In this lab, you will be introduced to place and route. This stage is digital design following synthesis. It takes the netlist, efficiently places cells, and creates a clock tree and routes or connections between cells to implement your design. This lab consists of several parts:
+1. First, we will cover the basic theory of place and route and techniques needed for this lab.
+2. You will then learn how the tools can create a floorplan, route power straps, place standard cells, perform timing optimizations, generate a clock tree for your design, and route the wires in the design.
+3. Afterwards, you will examine the outputs of PAR, that is, OpenROAD reports, including timing, power, and area information. You will analyze and visualize these using OpenROAD GUI.
+4. Then, you will be writing a GCD coprocessor that could be included alongside a general-purpose CPU.
+5. Next, you will extend GCD coprocessor design by parallelizing GCD units and parametrizing your parallel GCD coprocessor.
+6. Finally, you will run the Hammer place and route flow and examine OpenROAD reports again.
+
+<!-- 3. Finally, you will get a slight head start on your project by writing part of the ALU.  -->
+
+This lab also contains a series of conceptual questions labeled as *thought experiments.* These will not be graded and do not have to be included in your lab deliverables. They are meant to deepen your understanding of the material and serve as discussion points between students.
 
 **Topics Covered**
 - Place and Route 
 - Metal Layers
 - Standard Cell
-- CAD Tools (emphasis on *Innovus*)
+- CAD Tools (emphasis on *OpenROAD*)
 - Hammer
-- Skywater 130mm PDK
+- SKY130 PDK
 - Reading Reports
+- Power, Performance, Area (PPA)
 
 **Recommended Reading**
-- [Verilog Primer](https://inst.eecs.berkeley.edu/~eecs151/fa21/files/verilog/Verilog_Primer_Slides.pdf)
+- [Verilog Primer](../lab2/doc/Verilog_Primer_Slides.pdf)
 - [Hammer-Flow](https://hammer-vlsi.readthedocs.io/en/latest/Hammer-Flow/index.html)
-- [Ready-Valid Interface](https://inst.eecs.berkeley.edu/~eecs151/fa21/files/verilog/ready_valid_interface.pdf)
+- [Ready-Valid Interface](../lab3/doc/ready_valid_interface.pdf)
 
-<span style="color:red"> ***WARNING:*** **Under no circumstance should any third party information, manuals be copied from the instructional servers to personal devices. In addition, do not copy plugins from hammer that interact with third party tools to a personal device.**</span>
-
-<!-- ```shell
-source /home/ff/eecs151/asic/eecs151.bashrc
-```
-
-```shell
-cd /home/tmp/<your-eecs-username>
-cd asic-labs-<github-username>
-git pull skeleton main
-git push -u origin main
-``` -->
-
-
-# Background
-
-The sections presented here are meant to provide context that will benefit you in the lab exercise. Please review them (at minimum skim) to gain a better understanding of the what, the why, and the how of physical design for ASICs.
+The several following sections are meant to provide context that will benefit you in the lab exercise. Please review them (at minimum skim) to gain a better understanding of the what, the why, and the how of physical design for ASICs.
 
 
 ## FIFO
 
-A first-in first-out (FIFO) queue is a common data structure in both hardware and software. The purpose of a FIFO is to buffer, or hold, incoming data until that data requested. Once requested, data will exit the FIFO. There are many implementations of FIFO, but they all follow a single strict ordering rule: *any particular entry must exit the FIFO prior to any entries that entered after it.* For this reason, a FIFO is often compared to a queue, or line formed as entrances (ex. a line to enter a concert or a line formed in school cafeteria for lunch). FIFOs are frequently utilized in digital design at module interfaces. 
+A first-in, first-out (FIFO) queue is a common data structure in both hardware and software. The purpose of a FIFO is to buffer, or hold, incoming data until that data is requested. Once requested, data will exit the FIFO. There are many implementations of FIFO, but they all follow a single strict ordering rule: *any particular entry must exit the FIFO prior to any entries that entered after it.* For this reason, a FIFO is often compared to a queue, or a line formed at entrances (e.g., a line to enter a concert or a line formed in a school cafeteria for lunch). FIFOs are frequently utilized in digital design at module interfaces.
 
 <figure align="center">
   <img src="./figs/fifo.png" width="600" align="center"/>
   <figcaption align="center">Block diagram of a FIFO (borrowed from: http://tinyurl.com/2becpjhk).</figcaption>
 </figure>
 
+Conceptually, there are two sides to a FIFO: (1) one side receives incoming data, and (2) the other side outputs outgoing data. Each "side" is a separate interface, often a simple, ready-valid interface. The FIFO *width* describes the bit width of the data it contains. The FIFO *depth* describes the number of entries the FIFO can hold.
 
-Conceptually, there are two sides to a FIFO: (1) one side receives incoming data and (2) the other side outputs outgoing data. Each "side" is a separate interface, often a simple ready-valid interface. The FIFO *width* describes the bitwidth of the data it contains. The FIFO *depth* describes the number of entries the FIFO can hold. 
+It is critical to understand that a FIFO is constructed from some form of memory. FIFOs are composed of either registers or SRAM. Although functionality is the same regardless of the underlying memory, the cost of implementation in ASIC design is different, especially for wide and/or deep FIFOs. In ASIC design, registers are considered to be more expensive as they are not as compact as SRAM. Therefore, large FIFOs are preferably SRAM-based. On the other hand, SRAMs are not readily available and usually require the usage of (and a license for) an SRAM generator.
 
-It is critical understand that a FIFO is constructed from some form of memory. FIFOs are composed of etiher registers or SRAM. Although functionality is the same regardless of the underlying memory, the cost of implementation in ASIC design is different, especially for wide and/or deep FIFOs. In ASIC design, registers are consider to be more expensive as they are not as compact as SRAM. Therefore, large FIFOs are preferrablly SRAM based. 
 
 ## Standard Cell
-A standard cell is predefined physical layout of transistors for logic gates and storage elements (latches or flip-flops). Standard cells have the same height, but may differ in width. The number of transistors and size of the transistors used determines the size of the standard cell. Each cell comes with timing and power information used during place and route. A cell library is the collection of standard cells used for a process, and is part of the PDK. Within the same PDK, there will be mutiple cells implementing the same logic gate, but with different sized transistors. A variety of cells  implementing the same logical function with different transistor sizes allows the CAD tool to select which variant to use in order to meet power and timing specifications (larger transistors require more power, but can drive larger currents, the trend is opposite for smaller transistors).
+
+A standard cell is a predefined physical layout of transistors for logic gates and storage elements (latches or flip-flops). Standard cells have the same height but may differ in width. The number of transistors and the size of the transistors used determine the size of the standard cell. Each cell comes with timing and power information used during place and route. A cell library is the collection of standard cells used for a process and is part of the PDK. Within the same PDK, there will be multiple cells implementing the same logic gate, but with differently sized transistors. A variety of cells implementing the same logical function with different transistor sizes allows the CAD tool to select which variant to use in order to meet power and timing specifications (larger transistors require more power but can drive larger currents; the trend is opposite for smaller transistors).
 
 <figure align="center">
   <img src="./figs/std_cell.png" width="200" align="center"/>
@@ -93,156 +121,177 @@ A standard cell is predefined physical layout of transistors for logic gates and
 
 ## VLSI
 
-ASICs are 3D structures like a layer cake. At the bottom, is the substrate which is where the transistors lie. Above the substrate are alternating layers of a *metal layer *and a dieletric. The number of layer is process dependent and determined by the foundry.
-Metal layers are an important concept to understand in ASIC design. Transistors are connected through metal layers. Routes must go through the dielectric up to a metal layer, route through a layer or mutiple layers, then back down the the subtrate to connect transistors. Conenctions between metal layers are called ***vias***. In addition, power rails are contained in metal layers. Typically, layers higher up contain global route, and layer closer to the substrate contained local route. Power distribution is on the higher layers, and routes between two logic gates are on hte lower layers.
+ASICs are 3D structures like a layer cake. At the bottom is the substrate, which is where the transistors lie. Above the substrate are alternating layers of a *metal layer* and a dielectric. The number of layers is process dependent and determined by the foundry.
+Metal layers are an important concept to understand in ASIC design. Transistors are connected through metal layers. Routes must go through the dielectric up to a metal layer, route through a layer or multiple layers, then back down the substrate to connect transistors. Connections between metal layers are called ***vias***. In addition, power rails are contained in metal layers. Typically, layers higher up contain global routes, and layers closer to the substrate contain local routes. Power distribution is on the higher layers, and routes between two logic gates are on the lower layers.
 
 <figure align="center">
   <img src="./figs/metal_layers.png" width="600" align="center"/>
-  <figcaption align="center">Example metal layer stack up of a toy ASIC. Please ignore the "Three metal programmable" annotation in the figure. (borrowed from: http://tinyurl.com/5bjejjsz)</figcaption>
+  <figcaption align="center">Example metal layer stack-up of a toy ASIC. Please ignore the "Three metal programmable" annotation in the figure. (borrowed from [here](https://www.design-reuse.com/articles/9566/the-platform-based-soc-design-that-utilizes-structured-asic-technology.html))</figcaption>
 </figure>
-
-
 
 
 ## Place and Route
-Place and route actualizes your design or circuit with physical transistors. It is part of "physical design" which is also called PD. Place and route (often written as PAR, P&R, PnR) follows directly after synthesis in digital design (both ASIC and FPGA). The netlist produced during synthesis expresses the entire design at the gate-level with cells from the provided PDK. During PAR, a physical cell instance is created for each cell in the netlist and placed in the chip area. Following placement, routes (or traces) are created to wire the cells together as specified by the netlist.
 
+Place and route actualizes your design or circuit with physical transistors. It is part of "physical design," which is also called PD. Place and route (often written as PAR, P&R, or PnR) follows directly after synthesis in digital design (both ASIC and FPGA). The netlist produced during synthesis expresses the entire design at the gate level with cells from the provided PDK. During PAR, a physical cell instance is created for each cell in the netlist and placed in the chip area. Following placement, routes (or traces) are created to wire the cells together as specified by the netlist.
 
-Intuitively, better placement of the cells implies more efficient routing which means less area and the better timing results. Similarly, the opposite is true; poor placement of cells requires long routes and often fails timing (placement is why synthesis timing reports are not accurate for the final circuit). The output of place and route is a layout.
+Intuitively, better placement of the cells implies more efficient routing, which means less area and better timing results. Similarly, the opposite is true; poor placement of cells requires long routes and often fails timing (placement is one of the reasons why synthesis timing reports are not accurate for the final circuit). The output of place and route is a layout.
 
-
-PAR is the most complex and longest stage in the digital design flow. The details of PAR are beyond the level of this lab, however it is important to know the general strategy of its algorithms. The design is first partitioned into sub-designs which exploits parallelism to reduce runtime. The initial placement is iterated upon until the optimal placement is found meeting the design specifications (power, timing, and area) given user constraints. Each CAD tool has their own place and route algorithms, however they all contain similar stages:
-
-
+PAR is the most complex and longest stage in the digital design flow. The details of PAR are beyond the level of this lab; however, it is important to know the general strategy of its algorithms. The design is first partitioned into subdesigns, which exploits parallelism to reduce runtime. The initial placement is iterated upon until the optimal placement is found meeting the design specifications (power, timing, and area) given user constraints. Each CAD tool has its own place and route algorithms; however, they all contain similar stages:
 1. *Floorplan*
-2. *Clock-Tree-Synthesis*
-3. *Placement and Route*
+2. *Power Plan*
+3. *Clock Tree Synthesis*
+4. *Placement*
+5. *Route*
 
-  > Note: THIS SECTION IS A SIMPLE INTRODUCTION TO PLACE AND ROUTE. PLACE AND ROUTE IS THE MOST CRITICAL STAGE IN THE ASIC DESIGN FLOW AND ALL DETAILS CAN NOT BE DISCUSSED WITHIN A SINGLE LAB.
+> Note: This section is a simple introduction to place and route. Place and route is the most critical stage in the ASIC design flow, and all details cannot be discussed within a single lab.
 
 
 ### Floorplanning 
-Floorplanning is the process of allocating area for the design, constraining how the area is utilized, and power planning. Floorplanning is often the most important factor for determining a physical circuit’s performance, because intelligent floorplanning can assist the tool in minimizing the delays in the design, especially if the total area is highly constrained.
+
+Floorplanning is the process of allocating area for the design, constraining how the area is utilized, and power planning. Floorplanning is often the most important factor for determining a physical circuit's performance, because intelligent floorplanning can assist the tool in minimizing the delays in the design, especially if the total area is highly constrained.
 
 <figure align="center">
   <img src="./figs/vlsi_die_area.jpg" width="400" align="center"/>
-  <figcaption align="center">Block diagram of floorplan showing die area(full image), IO ring, and core area (borrowed from: http://tinyurl.com/237euu99).</figcaption>
+  <figcaption align="center">Block diagram of floorplan showing die area (full image), IO ring, and core area.</figcaption>
 </figure>
 
-The total area designated for the ASIC is called the ***die area*** as it is the total area for a single die. The die area is further subdivided into the IO ring and the core area. The ***IO ring***, sometimes called the IO area, lies between the border of the die area and core area, and is reserved for IO cells. IO cells contain all circuitry required to support I/O including ESD, receiver, driver and IO pads. The remaining area is termed the ***core area***. This is where your design standard cells and macros are placed. The core area is divided into rows of fixed height. Standard cells are placed within these rows. These rows have ***power stripes*** which power to the standard cells and provide structure to the layout of the design.
+The total area designated for the ASIC is called the ***die area***, as it is the total area for a single [die](https://en.wikipedia.org/wiki/Die_(integrated_circuit)). The die area is further subdivided into the IO ring and the core area. The ***IO ring***, sometimes called the IO area, lies between the border of the die area and the core area and is reserved for IO cells. IO cells contain all circuitry required to support I/O, including ESD, receiver, driver and IO pads. The remaining area is termed the ***core area***. This is where your design standard cells and macros are placed. The core area is divided into rows of fixed height. Standard cells are placed within these rows. These rows have ***power stripes*** that power to the standard cells and provide structure to the layout of the design.
 
 <figure align="center">
   <img src="./figs/floorplan2.png" width="400" align="center"/>
-  <figcaption align="center">Die area with example rows shown (borrowed from: http://tinyurl.com/bd76apw2).</figcaption>
+  <figcaption align="center">Die area with example rows shown..</figcaption>
 </figure>
 
-
-Floorplan constraints can be “hard” or “soft”. “Hard” constraints generally involve pre-placement of “macros”, which can be anything from memory elements (SRAM arrays, in an upcoming lab) to analog black boxes (like PLLs or LDOs). “Soft” constraints are generally guided placements of hierarchical modules in the design (e.g. the datapath, controller, and FIFOs), towards certain regions of the floorplan. Generally, the PAR tool does a good job of placing hierarchical modules optimally, but sometimes, a little human assistance is necessary to eke out the last bit of performance.
-
-Power planning is another major step in floorplanning. ASICs commonly have ***power straps***, route carrying power from the power rails, of different voltages stretched across the core area. The location and arrangement of the rails can be customized to support the given layout of the circuit. Power planning must be done carefully as it affects the placement of macros and standard cells. Furthermore, individual macros might have power rings, or power rails surrounding them which are independent from other logic or macros.
+Floorplan constraints can be "hard" or "soft." "Hard" constraints generally involve pre-placement of "macros," which can be anything from memory elements (SRAM arrays, in an upcoming lab) to analog black boxes (like PLLs or LDOs). "Soft" constraints are generally guided placements of hierarchical modules in the design (e.g., the datapath, controller, and FIFOs) towards certain regions of the floorplan. Generally, the PAR tool does a good job of placing hierarchical modules optimally, but sometimes, a little human assistance is necessary to eke out the last bit of performance.
 
 
+### Power Planning
+
+Power planning is another major step in floorplanning. ASICs commonly have ***power straps***, routes of different voltages stretched across the core area, carrying power from the power rails. The location and arrangement of the rails can be customized to support the given layout of the circuit. Power planning must be done carefully as it affects the placement of macros and standard cells. Furthermore, individual macros might have power rings or power rails around them that are independent from other logic or macros.
 
 
-### Clock Tree Synthesis (CTS): Overview
+### Placement
 
-Clock Tree Synthesis (CTS) is arguably the next most important step in PAR behind floorplanning. Recall that up until this point, we have not talked about the clock that triggers all the sequential logic in our design. This is because the clock signal is assumed to arrive at every sequential element in our design at the same time. The synthesis tool makes this assumption and so does the initial cell placement algorithm. In reality, the sequential elements have to be placed wherever makes the most sense (e.g. to minimize delays between them). As a result, there is a different amount of delay to every element from the top-level clock pin that must be “balanced” to maintain the timing results from synthesis. We shall now explore the steps the PAR tool takes to solve this problem and why it is called Clock Tree Synthesis.
+Placement is the process of placing the synthesized design (structural connection of standard cells) onto the specified floorplan. While there is placement of minor cells (such as bulk connection cells, antenna-effect prevention cells, I/O buffers, filler cells...) that take place separately and in between various stages of design, "placement" usually refers to the initial placement of the standard cells. After the cells are placed, they are not "locked" – they can be moved around by the tool during subsequent optimization steps. However, initial placement tries its best to place the cells optimally, obeying the floorplan constraints and using complex heuristics to minimize the parasitic delay caused by the connecting wires between cells and timing skew between synchronous elements (e.g., flip-flops, memories). Poor placement (as well as poor aspect ratio of the floorplan) can result in congestion of wires later on in the design, which may prevent successful routing.
 
+
+### Clock Tree Synthesis (CTS)
+
+Clock Tree Synthesis (CTS) is arguably the next most important step in PAR behind floorplanning. Recall that up until this point, we have not talked about the clock that triggers all the sequential logic in our design. This is because the clock signal is assumed to arrive at every sequential element in our design at the same time. The synthesis tool makes this assumption, and so does the initial cell placement algorithm. In reality, the sequential elements have to be placed wherever it makes the most sense (e.g., to minimize delays between them). As a result, there is a different amount of delay to every element from the top-level clock pin that must be *balanced* to maintain the timing results from synthesis. We shall now explore the steps the PAR tool takes to solve this problem and why it is called Clock Tree Synthesis.
 
 <details>
   <summary>Pre-CTS Optimization</summary>
-  
-  #### Pre-CTS Optimization
 
-  Pre-CTS optimization is the first round of Static Timing Analysis (STA) and optimization performed on the design. It has a large freedom to move the cells around to optimize your design to meet setup checks, and is performed after the initial cell placement. Hold errors are not checked during pre-CTS optimization. Because we do not have a clock tree in place yet, we do not know when the clocks will arrive to each sequential element, hence we don’t know if there are hold violations. The tool therefore assumes that every sequential element receives the clock ideally at the same time, and tries to balance out the delays in data paths to ensure no setup violations occur. In the end, it generates a timing report, very similar to the ones we saw in the last lab.
+#### Pre-CTS Optimization
+
+  Pre-CTS optimization is the first round of Static Timing Analysis (STA) and optimization performed on the design. It has a large freedom to move the cells around to optimize your design to meet setup checks and is performed after the initial cell placement. **Hold errors are not checked during pre-CTS optimization**. Because we do not have a clock tree in place yet, we do not know when the clocks will arrive at each sequential element; hence we do not know if there are hold violations. The tool therefore assumes that every sequential element receives the clock ideally at the same time and tries to balance out the delays in data paths to ensure no setup violations occur. In the end, it generates a timing report, very similar to the ones we saw in the last lab.
 
 </details>
-
 
 <details>
   <summary>Clock Tree Clustering and Balancing</summary>
 
 #### Clock Tree Clustering and Balancing
-Most of CTS is accomplished after initial optimization. The CTS algorithm first clusters groups of sequential elements together, mostly based on their position in the design relative to the top-level clock pin and common clock gating logic. The numbers of elements in each cluster is selected so that it does not present too large of a load to a driving cell. These clusters of sequential elements are the “leaves” of the clock tree attached to branches.
 
-Next, the CTS algorithm tries to ensure that the delay from the top-level clock pin to the leaves are all the same. It accomplishes this by adding and sizing clock buffers between the top-level pin and the leaves. There may be multiple stages of clock buffering, depending on how physically large the design is. Each clock buffer that drives multiple loads is a branching point in the clock tree, and strings of clock buffers in a row are essentially the “trunks”. Finally, the top-level clock pin is considered the “root” of the clock tree.
+Most of CTS is accomplished after initial optimization. The CTS algorithm first clusters groups of sequential elements together, mostly based on their position in the design relative to the top-level clock pin and common [clock gating](https://en.wikipedia.org/wiki/Clock_gating) logic. The number of elements in each cluster is selected so that it does not present too large of a load to a driving cell. These clusters of sequential elements are the **leaves** of the clock tree attached to *branches*.
 
-The CTS algorithm may go through many iterations of clustering and balancing. It will try to minimize the depth of the tree (called *insertion delay*, i.e. the delay from the root to the leaves) while simultaneously minimizing the *skew* (difference in insertion delay) between each leaf in the tree. The deeper the tree, the harder it is to meet both setup and hold timing (*thought experiment #1*: why is this?).
+Next, the CTS algorithm tries to ensure that the delays from the top-level clock pin to the leaves are all the same. It accomplishes this by adding and sizing *clock buffers* between the top-level pin and the leaves. There may be multiple stages of clock buffering, depending on how physically large the design is. Each clock buffer that drives multiple loads is a branching point in the clock tree, and strings of clock buffers in a row are essentially the **trunks**. Finally, the top-level clock pin is considered the **root** of the clock tree.
+
+The CTS algorithm may go through many iterations of clustering and balancing. It will try to minimize the depth of the tree (called *insertion delay*, i.e., the delay from the root to the leaves) while simultaneously minimizing the *skew* (difference in insertion delay) between each leaf in the tree. The deeper the tree, the harder it is to meet both setup and hold timing (*thought experiment #1*: why is this?).
+
 </details>
 
 <details>
   <summary>Post-CTS Optimization</summary>
 
 #### Post-CTS Optimization
-Post-CTS optimization is then performed, where the clock is now a real signal that is being distributed unequally to different parts of the design. In this step, the tool fixes setup and hold time violations simultaneously. Often times, fixing one error may introduce one or multiple errors (*thought experiment #2*: why is this?), so this process is iterative until it reaches convergence (which may or may not meet your timing constraints!). Fixing these violations involve resizing, adding/deleting, and even moving the logic and clock cells.
 
-After this stage of optimization, the clock tree and clock routing are fixed. In the next lab, you will finish the PAR flow, which finalizes the rest of the routing, but it is usually the case that if your design is unable to meet timing after CTS, there’s no point continuing!
+Post-CTS optimization is then performed, where the clock is now a real signal that is being distributed unequally to different parts of the design. In this step, the tool fixes setup and hold time violations simultaneously. Oftentimes, fixing one error may introduce one or multiple errors (*thought experiment #2*: why is this?), so this process is iterative until it reaches convergence (which may or may not meet your timing constraints!). Fixing these violations involves resizing, adding/deleting, and even moving the logic and clock cells.
+
+After this stage of optimization, the clock tree and clock routing are fixed. In the next lab, you will finish the PAR flow, which finalizes the rest of the routing, but it is usually the case that if your design is unable to meet timing after CTS, there's no point continuing!
+<!-- TODO: fix last sentence in case of join -->
 </details>
 
-### Placement
 
-Placement is the process of placing the synthesized design (structural connection of standard cells) onto the specified floorplan. While there is placement of minor cells (such as bulk connection cells, antenna-effect prevention cells, I/O buffers...) that take place separately and in between various stages of design, “placement” usually refers to the initial placement of the standard cells. After the cells are placed, they are not “locked”–they can be moved around by the tool during subsequent optimization steps. However, initial placement tries its best to place the cells optimally, obeying the floorplan constraints and using complex heuristics to minimize the parasitic delay caused by the connecting wires between cells and timing skew between synchronous elements (e.g. flip-flops, memories). Poor placement (as well as poor aspect ratio of the floorplan) can result in congestion of wires later on in the design, which may prevent successful routing.
+### Routing
 
+Routing is the next major flow step. Prior to the actual routing step, place and route EDA tools usually use a basic routing engine with errors and shorts but ignore these errors and simply try to get an estimate of delays and parasitics. Once post-CTS optimization is done, it switches to a different tool that actually legalizes routing and tries to eliminate shorts while meeting timing. Routing is one of the most computationally heavy tasks of digital IC design and can take days to complete for complicated designs. **This will be reflected in the runtime in this lab.**
 
-## Innovus
-
-In this course, we use Cadence *Innovus* to perform place and route. Innovus does have a GUI, however, like most CAD tools, it is more common to interface with *Innovus* use scripts. That said, the best method to verify good placement and visualization of errors is with the GUI. Here we give a quick tutorial to work with the GUI.
-
-The most critical aspect of the GUI is understanding the three different views: Floorplan, Amoeba, and Physical. Each view has a different use case:
-
- |    View     |                                                                                                                                            Description                                                                                                                                              |
-|:---------:  |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  |
-| *Floorplan*   | This view is primarily used during floorplanning to assess high level characteristic. In this view, utilization of modules from the design hierarchy are shown on the left of the die area as pink rectangles where their size represents area and estimates for the utilization in each rectangle   |
-|   *Amoeba*    | A view that focuses on the core area where modules of the design hierarchy are represented as pink blobs. These blobs can be selected to highlight all standard cells associated with that module. Furthermore, blobs can be further subdivided if there is a submodule hierarchy                       |
-| *Physical*    | A view which represents the physical layout of individual standard cells, metal layers, power strap, blockages and more. This view provides the most information about the physical implementation of the design. In this view, individual traces between standard cells can be inspected.          |
+After routing is complete, a post-route optimization is run to ensure no timing violations remain. Post-route optimization typically has little freedom to move cells around, and it tries to meet the timing constraints mostly by tweaking the length of the routings.
 
 
+### Signoff
 
+The signoff stage in the PnR flow is the final step before the design is considered complete and ready for manufacturing. It roughly includes:
+- Final Verification: This involves thorough checks to ensure that the design meets all specified requirements (performance, power, area, etc.), such as:
+   - Timing Verification: Ensuring that the design meets all timing constraints.
+   - Design Rule Check (DRC): Verifying that the design adheres to the manufacturing process rules.
+   - Layout Versus Schematic (LVS): Ensuring that the layout matches the original schematic design.
+   - Electromigration (EM) and IR Drop Analysis: Checking for potential reliability issues due to current density and voltage drops.
+   - Signal Integrity Check: Verifying that signal integrity issues such as crosstalk are within acceptable limits.
+- Fixing Violations: any remaining violations identified during the final verification are addressed. This could lead to adjusting the placement or routing of components, modifying the clock tree or power distribution network, etc.
+- Preparation for Tape-Out: Once all checks are passed and violations are fixed, the design is prepared for tape-out, which includes generating the final GDSII file and sending it to the fab.
+
+The signoff stage is crucial as it ensures that the design is robust, manufacturable, and meets all specified criteria before moving to the fabrication stage.
+
+
+## OpenROAD
+
+In this course, we use *OpenROAD* to perform place and route by generally following the flow described in previous sections, although some details might differ. OpenROAD does have a GUI; however, like most CAD tools, it is more common to interface with *OpenROAD* using scripts. That said, the best method to verify good placement and visualization of errors is with the GUI. Here we give a quick tutorial to work with the GUI.
+
+In the central part of the GUI, one can see a view that represents the physical layout of individual standard cells, metal layers, power straps, blockages, and more. It provides lots of information about the physical implementation of the design. In this view, useful debugging and inspection can be done. Feel free to try out some keyboard shortcuts (*Z, Shift+Z, F, Ctrl+F, K*) and figure out what they do.
+
+The *Display Control* pane on the far left allows users to customize the objects displayed in the selected view. Objects have two properties: *visibility* (marked with the "eye" symbol) and *selectability* (marked with the "pointing hand" symbol):
+- If the visibility box associated with the object is selected (ticked), then the object is visible; otherwise it is removed from the view.
+- If the selectability box associated with the object is selected (ticked), then the object is selectable with the cursor; otherwise it is not.
+
+It is often useful to remove the visibility and selectability of not pertinent objects when trying to investigate a particular issue. It is also useful to engage the visibility, but remove the selectability of objects which are pertinent, but should not interfere while you select objects in the view while debugging.
 
 <figure align="center">
-  <img src="./figs/view_icons_labelled.png" width="200" align="center"/>
-  <figcaption align="center">View menu at top right of toolbar</figcaption>
+  <img src="./figs/display_control.png" width="200" align="center"/>
+  <figcaption align="center">OpenROAD sidebar to customize the view</figcaption>
 </figure>
 
+Objects are categorized within the dropdowns, which naturally follow the organization of physical design. Pay attention to the *Layers* category. This lists the different layers of the used technology flavor. The abbreviation is *met* for metal layer and *via* for vias. Engaging and disengaging the visibility and selectability of the layers allows you to investigate individual routes. Another category is *Nets*, which allows you to hide or show different nets by type. This is incredibly useful for analyzing the impact of global routes like clock or power straps. The final category we will discuss is *Heat Maps*, which represent a pretty simple and interesting way to see design statistics, such as placement density or routing congestion. This will enable you to see how to better distribute the standard cells and/or macros and how to optimize the connections in between.
 
-The pane on the far right allows users to customize the objects displayed in the selected view. Objects have two properties: visibility (V) and selectability (S):
-- If the visibility box associated with the object is selected, then the object is visible, otherwise it is removed from the view. 
-- If the selectability box associated with the object is selected, then the object is selectable with the cursor, otherwise it is not.
+A set of panes on the right (some of them might need to be enabled under the *Windows* tab) gives you insight into additional design details:
+- *Inspector*: lets you see the details of the selected object's attributes.
+- *Hierarchy Browser*: displays a hierarchical list of instances with their main features.
+- *Timing Report*: displays a graphical view of the timing reports with timing path details.
+- *Clock Tree Viewer*: depicts how the clock tree looks "in time."
 
-It is often useful to have remove the visibility and selectability of not pertinent objects when trying to investigate a particular issue. It is also useful to engage the visibility, but remove the selectable of objects which are pertinent, but should not interfere while you select objects in the view while debugging.
+In the bottom part of the GUI, there is a *Scripting* subwindow where the output log and messages are printed. This pane also enables you to manually enter custom TCL commands or further analyze the design using commands.
 
-<figure align="center">
-  <img src="./figs/innovus_sidebar.png" width="400" align="center"/>
-  <figcaption align="center">Innovus sidebar to customize the view</figcaption>
-</figure>
+The *OpenROAD* GUI offers many more tools that aid in physical design, including zooming, selecting regions and paths, highlighting, rulers, manipulating routes, and more. If interested, please look at the *OpenROAD* [User Guide](https://openroad-test.readthedocs.io/en/latest/user/UserGuide.html) for more info, as this lab cannot introduce all the details.
 
-Objects are categorized within the dropdowns which naturally follow the organization of physical design. Pay attention the *Layer* category. This lists the different layers of your ASIC. The abbreviation is *m* for metal layer, and *v* for vias. Metal layer and vias are only visible in the *Physical* view, however by engaging and disengaging the visibility and selectability of the layers allows you to investigate individual routes (you can even trace a route between to cell by right clicking it and selecting the appropriate option from the dropdown that appears). The final category we will discuss is *Net* which allows you to hide or show different nets by type. This is incredibly useful for analyzing the impact of global routes like clock, reset, and power straps.
+*OpenROAD* is a powerful tool, but the learning curve is steep; therefore, in this class, we primarily use the GUI for visualization and interact with the tool through scripting. The flow used in this course is generated by Hammer that abstracts a lot of the cumbersome lower-level detail away, but there are principal steps of the flow that one should know:
+
+|   OpenROAD flow step  | Description                                                                                                                                              |
+|:---------------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+|                       |                                                                                                                                                          |
+|     _init_design_     | Reads in all necessary technology files (Liberty, LEF, etc.) and design source files (netlist, constraints, etc.) and configures the flow setup.         |
+|  _floorplan_design_   | Creates the floorplan; specifies the die and IO area and utilization.                                                                                    |
+|     _place_bumps_     | Creates bumps for design; bumps are locations for IO to be routed to (modern IC design does not have pins for IO, but bumps).                            |
+|   _macro_placement_   | Places macros (RAMs, embedded macros, etc.).                                                                                                             |
+|   _place_tapcells_    | Inserts tap cells and well ties.                                                                                                                         |
+|    _power_straps_     | Creates power distribution network (PDN).                                                                                                                |
+|  _global_placement_   | Places standard cells and performs optimization and repair for max slew, max capacitance, and max fanout violations and long wires.                      |
+|    _io_placement_     | IO pin placement (for designs without pads).                                                                                                             |
+| _detailed_placement_  | Legalizes placement - aligns cells to grid, adheres to design rules. Includes incremental timing analysis for early estimates.                           |
+|     _clock_tree_      | Creates a clock tree and performs optimizations of the clock tree to meet timing constraints. Inserts buffers and resizes objects for high fanout nets.  |
+|     _add_fillers_     | Adds filler cells to the design; filler cells occupy spaces in the die area where standard cells are absent to provide structural integrity to the chip. |
+|    _global_route_     | Creates routing guides. Repairs process antenna violations.                                                                                              |
+|   _detailed_route_    | Legalizes routes; DRC-correct routing to meet timing; power constraints.                                                                                 |
+|     _extraction_      | Generates design parasitics (resistance, capacitance) information and a [SPEF](https://en.wikipedia.org/wiki/Standard_Parasitic_Exchange_Format) file.   |
+|    _write_design_     | Writes out a final design database that includes a netlist, GDS file, SDF file, etc.                                                                     |
 
 
-The *Innvous* GUI offers many more tools which aid in physical design including: zooming, selecting regions, highlight, rulers, moving objects, manipulating route, flylines (visualize aid for showing source and destination for routes; occurs when either source or destination is selected), and more. If interested, please look at the *Innovus* User Guide for more info as this lab cannot introduce all the details.
+## Place and Route with Hammer
 
-
-*Innovus* is a powerful tool, but the learning curve is steep, therefore, in this class, we primarily use the GUI for visualization and interact with the tool through scripting. The flow used in this course is generated by HAMMER which abstracts a lot of the cumbersome lower level detail away, but there are principal steps of the flow which one should know (HAMMER follows a MMMC mode initialization flow):
-|   Innovus Command     | Description                                                                                                                                                                                                                                                                                 |
-|:-------------------:  |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|     _read_mmmc_       | Reads in a Multi Mode Multi corner (MMMC) file into the design. A MMMC file specifies different modes and corners which the design can operate in. This is important for static timing analysis                                                                                             |
-|   _read_physical_     | Reads in any files pertaining to the physical aspects of the design (ex LEF files)                                                                                                                                                                                                          |
-|    _read_netlist_     | Reads the netlist of the design into Innovus                                                                                                                                                                                                                                                |
-| _read_power_intent_   | Reads in CPF file A CPF file contains information about power domains in the design (voltage, names, groups, etc)                                                                                                                                                                           |
-|    _init_design_      | A view which represents the physical layout of individual standard cells, metal layers, power strap, blockages and more. This view provides the most information about the physical implementation of the design. In this view, individual traces between standard cells can be inspected.  |
-| _create_floorplan_    | Create the floorplan; specifies the die are and any margins                                                                                                                                                                                                                                 |
-|    _create_bump_      | Create bumps for design; bumps are location for IO to be routed to (modern IC design does not have pin for IO, but bumps)                                                                                                                                                                   |
-|  _place_opt_design_   | Run placement for standard cells and optimize pre-CTS                                                                                                                                                                                                                                       |
-|    _ccopt_design_     | Create CTS and performs optimizations of clock-tree to meet timing constraints                                                                                                                                                                                                              |
-|    _route_design_     | Route the design                                                                                                                                                                                                                                                                            |
-|     _opt_design_      | Optimize the design for better PPA; the tool is allowed the shuffle standard cells, modify routing, etc to optimize design                                                                                                                                                                   |
-|    _add_fillers_      | Add fillers cells to the design; filler cells occupy spaces in the die area where standard cells are absent to provide structural integrity to the chip                                                                                      
-                  
-
-## Place and Route with HAMMER
 
 ### Placement Constraints
-In this lab, we will provide basic placement constraints specified in the *design.yml* file. Navigate to the Lab 4 parent directory, Open up this file and locate the following text block:
+
+In this lab, we will provide basic placement constraints specified in the *cfg/design.yml* file. Open up this file and locate the following text block:
 
 ```yaml
 # Placement Constraints
@@ -272,35 +321,15 @@ vlsi.inputs.pin.assignments: [
   {pins: "*", layers: ["met2", "met4"], side: "bottom"}
 ]
 ```
-<!---tech-->
 
-The `vlsi.inputs.placement_constraints` block specifies two floorplan constraints. The first one denotes the origin `(x, y)`, size `(width, height)` and border margins of the top-level block `gcd_coprocessor`. The second one denotes a soft placement constraint on the GCD datapath to be roughly in the center of the floorplan (for complicated designs, floorplans of major modules are often defined separately, and then assembled together hierarchically). Pin constraints are also shown here. The only thing to recognize is that all pins are constrained at the bottom boundary of the design, on layers metal 2 and metal 4. <!--- tech -->
-Pin placement becomes very important in a hierarchical design, if modules need to abut each other.
+The `vlsi.inputs.placement_constraints` block specifies two floorplan constraints. The first one denotes the origin `(x, y)`, size `(width, height)`, and border margins of the top-level block `gcd_coprocessor`. The second one denotes a soft placement constraint on the GCD datapath to be roughly in the center of the floorplan (for complicated designs, floorplans of major modules are often defined separately and then assembled together hierarchically). Pin constraints are also shown here. The only thing to recognize is that all pins are constrained at the bottom boundary of the design, on layers metal 2 and metal 4. Pin placement becomes very important in a hierarchical design, if modules need to abut each other.
 
 
-<!-- Now that we went over the flow (at least at a high level), it is time to actually perform these steps. Type the following commands to perform the above described operations:
+### Power Constraints
 
-```shell
-make syn-to-par
-make redo-par HAMMER_EXTRA_ARGS="--stop_after_step clock_tree"
-```
+Power must be delivered to the cells from the topmost metal layers all the way down to the transistors in a fashion that minimizes the overall resistance of the power wires without eating up all the resources that are needed for wiring the cells together. There are different ways to implement the power distribution, but the preferred method is to place interconnected grids of wide wires on every metal layer. There are tools to analyze the quality of the power distribution network, which calculate how the current being drawn by the circuit is transiently distributed across the power grid.
 
-
-The first command here translates the outputs of the synthesis tool to conform to the inputs expected by the PAR tool. The second command is similar to the partial synthesis commands we used in the last lab. It tells HAMMER to do the PAR flow until it finishes CTS, then stop. Under the hood, for this lab, HAMMER uses Cadence Innovus as the back-end tool to perform PAR. HAMMER waits until Innovus is done with the PAR steps through post-CTS optimization, then exits. You will see that HAMMER again gives you an error - similar to last lab when HAMMER expected a synthesized output, this time HAMMER expects the full flow to be completed and gives an error whenever it can’t find some collateral expected of PAR.
-
-Once done, look into the `build/par-rundir` folder. Similar to how all the synthesis files were placed under `build/syn-rundir` folder in the previous lab, this folder holds all the PAR files. Go ahead and open `par.tcl` file in a text editor. HAMMER generated this file for Innovus to consume in batch mode, and inside are Innovus Common UI commands as a TCL script.
-
-While we will be looking through some of these commands in a bit, first take a look at `timingReports`. You should only see the pre-CTS timing reports. `gcd_coprocessor_preCTS_all.tarpt.gz` contains the report in a g-zipped archive. The remaining files also contain useful information regarding capacitances, length of wires etc. You may view these directly using Vim, unzip them using `gzip`, or navigate through them with Caja, the file browser.
-
-Going back a level, in `par-rundir`, the folder `hammer_cts_debug` has the post-CTS timing reports. The two important archives are `hammer_cts_all.tarpt.gz` and `hammer_cts_all_hold.tarpt.gz`. These contain the setup and hold timing analyses results after post-CTS optimization. Look into the hold report (you may actually see some violations!). However, any violation should be small (<1 ps) and because we have a lot of margins during design (namely the `design.yml` file has “clock uncertainty” set to 100 ps), these small violations are not of concern, but should still be investigated in a real design. -->
-
-
-### Power
-
-Power must be delivered to the cells from the topmost metal layers all the way down to the transistors, in a fashion that minimizes the overall resistance of the power wires without eating up all the resources that are needed for wiring the cells together. You will learn about power distribution briefly at the end of this course’s lectures, but the preferred method is to place interconnected grids of wide wires on every metal layer. There are tools to analyze the quality of the `power_distribution` network, which like the post-PAR simulations you did in Lab 1, calculate how the current being drawn by the circuit is transiently distributed across the power grid.
-
-
-In the middle of the  `sky130.yml` file, you will see this block, which contains parameters to HAMMER’s power strap auto-calculation API:
+In the middle of the `cfg/sky130.yml` file, you will see this block, which contains parameters to Hammer's power strap auto-calculation API:
 
 ```yaml
 # Power Straps
@@ -326,39 +355,128 @@ par.generate_power_straps_options:
     power_utilization_met5: 0.5
 ```
 
-You should not need to touch this block of yaml, because the parameters are tuned for meeting design rules in this technology. However, the important parameter is `power_utilization`, which specifies that approximately 20% of the available routing space on each metal layer should be reserved for power, with the exception of metals 2 and 5, which have 5% and 50% density, respectively.
+You should not need to touch this block of YAML, because the parameters are tuned for meeting design rules in this technology. However, the important parameter is `power_utilization`, which specifies that approximately 20% of the available routing space on each metal layer should be reserved for power, with the exception of metals 2 and 5, which have 5% and 50% density, respectively.
 
 
-# Exercises
+## Place and Route with OpenROAD
+
+Let's set up the prerequisites for PAR and run PAR:
+
+```shell
+make syn
+make timing-syn
+make syn-to-par
+#make par
+make par HAMMER_EXTRA_ARGS="--stop_after_step extraction"
+# make redo-par HAMMER_EXTRA_ARGS="--start_before_step extraction"
+make redo-par HAMMER_EXTRA_ARGS="--start_before_step write_design"
+```
+
+> Note: OpenROAD sometimes freezes on commands following the *detailed_route* step (say "report_check_types"), so for now we recommend running place and route until the *extraction* step, then restarting the flow at this step. See Hammer [flow control](https://hammer-vlsi.readthedocs.io/en/latest/Hammer-Use/Flow-Control.html) for more info.
+
+The first command here translates the outputs of the synthesis tool to conform to the inputs expected by the PAR tool. The second command is similar to the partial synthesis commands we used in the last lab. Hammer will wait until *OpenROAD* is done with the PAR steps through post-CTS optimization and then end PAR.
+
+The PAR command could take a long time to complete, as it runs through all stages of PAR. Check out the iterations that OpenROAD runs through during optimization. You can see some of the metrics that OpenROAD is using. Once it completes, take a look into the *build/par-rundir* folder. Similar to how all the synthesis files were placed under the *build/syn-rundir* folder in the previous lab, this folder holds all the PAR files.  Let's look at the most important outputs from PAR:
+
+- *par.tcl*: Hammer generated this file for *OpenROAD* to consume in batch mode, and inside are OpenROAD commands as a TCL script (type `~/.conda-openroad/bin/openroad -help` to see how).
+- *reports*: the directory containing the timing reports. You should be familiar with these since they are similar to the `timing-syn` from lab 3. You may actually see some timing violations in there! However, any violation should be small (<10 ps), and because we have a lot of margins during design (namely, the `design.yml` file has "clock uncertainty" set to 100 ps), these small violations are not of concern but should still be investigated in a real design.
+- *gcd_coprocessor.gds*: the most important PAR output is the [GDS](https://en.wikipedia.org/wiki/GDSII) file, which defines the geometric shapes, text labels, and other information about the layout. When the chip design is finished, **the GDS file** is sent to [foundry](https://en.wikipedia.org/wiki/Semiconductor_fabrication_plant) for chip fabrication.
+- *gcd_coprocessor.sim.v*: the post-layout netlist, which represents the schematic of the design and which can be used for gate-level simulation. You can also notice the *gcd_coprocessor.lvs.v*, which is used for the LVS check.
+- *gcd.par.sdf.gz*: the compressed SDF file that should be annotated during gate-level simulation.
+- *openroad.log*: the log file of the entire OpenROAD place and route execution.
+
+*(thought experiment #3: Open the "par.tcl" and search for the command "filler_placement." Based on the names of the cells specified by this command, what do you think is the function of the filler cells?)*
+
+You might see many additional files compared to the `syn-rundir`, and that’s because the PAR flow incorporates the RC and parasitic delays, in addition to the cell delays (remember SPEF?). Open `build/par-rundir/gcd_coprocessor.par.spef` and search for the first occurrence of `D_NET`. What does it say about the first net? You may find [this page](https://en.wikipedia.org/wiki/Standard_Parasitic_Exchange_Format#Parasitics) helpful.
+*(thought experiment #4: get a sense of the units at the top and orders of magnitude of the RC parasitics in the SPEF file. If we used a different technology library with a finer process (e.g., 100 nm), do you expect the resistance to generally increase or decrease? How about the capacitance?)*
+
+After you are done with PAR, it is time to simulate the post-PAR netlist. Type the following command:
+
+```
+make sim-gl-par
+```
+
+This will use the same testbench but will now use the post-PAR netlist of your design, backannotated with delays and parasitics from PAR (from the SDF file). Note, however, that you may need to slightly relax the `CLOCK_PERIOD` variable in `cfg/sim-gl-par.yml`.
+
+### Visualizing the Results
+
+From the `build/par-rundir` folder, execute the following:
+
+```shell
+./generated-scripts/open_chip --timing
+```
+
+The OpenROAD GUI should pop up with your layout, and the *OpenROAD* shell runs in your terminal. You should see your entire design, which should look roughly similar to the one below. Take a moment to familiarize yourself with the OpenROAD GUI, and then let's dive into the details.
+
+<p align="center">
+  <img src="./figs/openroad_gcd.png" width="750" />
+</p>
+
+First, let's see how the tool placed the standard cells. Untick all "Nets" and "Instances" and select "Placement Density" under. We can see that most of the cells are placed in the central part of the layout, which is due to our soft placement constraint on the GCD datapath module. The rest of the design is placed near the IO pins.
+
+<p align="center">
+  <img src="./figs/placement_density.png" width="750" />
+</p>
+
+Now, let's take a look at the clock tree. In the left panel, under the "Nets" category, hide from view all the types of nets except "Clock." In the Clock Tree Viewer, click "Update" to load in the clock tree graph. Your GUI should now look approximately like this, which shows the clock tree routing:
+
+<p align="center">
+  <img src="./figs/clock_tree_viewer.png" width="750" />
+</p>
+
+The red squares are the leaves, the blue triangles are the clock buffers, and the red triangle on top is the clock pin or the clock root. The numbers on the left side denote the insertion delay in ps.
+
+
+Next, let's see how the tool performed the routing. Untick all "Nets" and "Instances" and select "Routing Congestion" under. We can see that the routing practically follows cell placement and pin positions. The contribution from the power straps in different metal layers is also very noticeable.
+
+<p align="center">
+  <img src="./figs/routing_congestion.png" width="750" />
+</p>
+
+Now, let's visualize the timing paths. Go to the Timing Report pane and click "Update" to load in the STA timing report from this stage. The first path on the top of the upper table is the critical path. By clicking each segment, the subpath can be highlighted in the layout view.
+
+<p align="center">
+  <img src="./figs/report_timing.png" width="750" />
+</p>
+
+Finally, let's see if there are any DRC errors in our design. Open the DRC Viewer and "Load" in the `gcd_route_drc.rpt` report. The white "Xs" mark the locations of DRC errors. These should always be fixed before the final GDS is sent for fabrication.
+
+<p align="center">
+  <img src="./figs/drc_viewer.png" width="750" />
+</p>
+
+When you are done, you may exit OpenROAD by closing the GUI window.
+
+
 
 ## GCD Accelerator
 
+In this part of the lab, you will be writing a GCD coprocessor that could be included alongside a general-purpose CPU.
+
 ### Design
 
-We will build upon the GCD module from Lab 3 by adding FIFOs. As a reminder, the GCD module computes the greatest compute denominator between two inputs. Your module will act as an accelerator which accepts inputs from a processor and returns the result. Below is a block diagram of the general design:
+We will build upon the GCD module from lab 3 by adding FIFOs. As a reminder, the GCD module computes the greatest common denominator between two inputs. Your module will act as an accelerator that accepts inputs from a processor and returns the result. Below is a block diagram of the general design:
 
 <p align="center">
   <img src="./figs/gcd_coprocessor.png" width="600" />
 </p>
 
+As a reminder, a FIFO is a sequential logic element that accepts (enqueues) valid data and outputs (dequeues) it in the same order when the next block is ready to accept. This is useful for buffering between the producer of data and its consumer.
 
-As a reminder, a FIFO is a sequential logic element which accepts (enqueues) valid data and outputs (dequeues) it in the same order when the next block is ready to accept. This is useful for buffering between the producer of data and its consumer.
-
-A partially written FIFO has been provided for you in *fifo.v*. For this specific implementation, when the input data is valid (`enq_val`) and the FIFO is ready for data (`enq_rdy`), the input data is enqueued into the FIFO. There are similar signals for the output data. This interface is called a “decoupled” interface, and if implemented correctly it makes modular design easy (although sometimes with performance penalties).
+A partially written FIFO has been provided for you in *fifo.v*. For this specific implementation, when the input data is valid (`enq_val`) and the FIFO is ready for data (`enq_rdy`), the input data is enqueued into the FIFO. There are similar signals for the output data. This interface is called a "decoupled" interface, and if implemented correctly, it makes modular design easy (although sometimes with performance penalties).
 
 Below is a specification for the expected FIFO implementation:
 - This FIFO is implemented with a 2-dimensional array of data called `buffer`. 
 - There are two pointers: a read pointer `rptr` and a write pointer `wptr`. 
 - When data is enqueued, the write pointer is incremented. 
 - When data is dequeued, the read pointer is incremented. 
-- The FIFO depth is always a power of 2 (`LOGDEPTH` parameter)
-  - we can leverage the fact that addition rolls over and the FIFO will continue to work. 
-- If the read and write pointers are the same, we don’t know if the FIFO is full or empty. The `full` register clears this ambiguity. When the pointers are the same and we just enqueued the `full` register is set to 1, and set to 0 otherwise.
+- The FIFO depth is always a power of 2 (`LOGDEPTH` parameter).
+- We can leverage the fact that addition rolls over and the FIFO will continue to work.
+- If the read and write pointers are the same, we don't know if the FIFO is full or empty. The `full` register clears this ambiguity. When the pointers are the same and we just enqueued, the `full` register is set to 1 and set to 0 otherwise.
 
 Please complete the FIFO implementation so that it behaves as expected.
 
-
-Template code for the GCD coprocessor has been provided in the `skel/src` directory. Below are the reproduced contents of `gcd_coprocessor.v`:
+Template code for the GCD coprocessor has been provided in the `src` directory. Below are the reproduced contents of `gcd_coprocessor.v`:
 
 ```verilog
 module gcd_coprocessor #( parameter W = 32 )(
@@ -388,227 +506,147 @@ module gcd_coprocessor #( parameter W = 32 )(
 endmodule
 ```
 
-This module is parameterized. `W` is the data width of your coprocessor; the input data and output data will all be this bitwidth. Be sure to pass this parameter on to any submodules that may use it! You should implement a coprocessor that can handle 4 outstanding requests at a time. For now, you will use FIFOs to store requests and responses.
+This module is parameterized. `W` is the data width of your coprocessor; the input data and output data will all be this bit width. Be sure to pass this parameter on to any submodules that may use it! You should implement a coprocessor that can handle 4 outstanding requests at a time. For now, you will use FIFOs to store requests and responses.
+
+Complete the coprocessor implementation in `gcd_coprocessor.v`, so that the GCD unit and FIFOs are connected like in the diagram above. Note the connection between the `gcd_datapath` and `gcd_control` should be very similar to that in lab 3's `gcd.v` and that clock and reset are omitted from the diagram. You will need to think about how to manage a ready/valid decoupled interface with 2 FIFOs in parallel.
+
+A testbench has been provided for you (`gcd_coprocessor_testbench.v`). You can run the testbench to test your code by typing `make sim-rtl` as before.
 
 
-Complete the coprocessor implementation in `gcd_coprocessor.v`, so that the GCD unit and FIFOs are connected like in the diagram above. Note the connection between the `gcd_datapath` and `gcd_control` should be very similar to that in Lab 3’s `gcd.v` and that clock and reset are omitted from the diagram. You will need to think about how to manage a ready/valid decoupled interface with 2 FIFOs in parallel.
+### Paralelization for Performance
 
-### Testbench
-A testbench has been prov  ided for you (`gcd_coprocessor_testbench.v`). You can run the testbench to test your code by typing `make sim-rtl` in the *skel* dirtectory as before.
+One way we can improve the performance of our GCD coprocessor is by parallelizing the compute. We can do this by including multiple GCD units in our design and routing traffic to them as they become available.
 
+For this purpose, the testbench has been modified (`src/gcd_coprocessor_parallel_testbench.v`) to check the total number of cycles taken by the coprocessor to complete the tests. Run `make sim-rtl` to with the new testbench on the solution code. Take note of the number of cycles that the tests take without modification, as you will need it to calculate your speedup.
 
-### Place and route
+Your task is to edit `gcd_coprocessor.v` and create `gcd_coprocessor_parallel.v` to improve the performance below 225 cycles. We will do this by using two instances of GCD. If your design does not meet this target, consider optimizing your FIFO or your arbiter to make them more efficient.
 
-<!-- In this lab, you will begin to implement your GCD coprocessor in physical layout–the next step towards making it a real integrated circuit. Place & Route (P&R or PAR) itself is a much longer process than synthesis, so for this lab we will look at the first few steps: floorplanning, placement, power straps, and clock tree synthesis (CTS). The rest will be introduced in the next lab. -->
+You will find RTL that connects the datapath and controller into one module in `gcd_unit.v`. You may find this useful when refactoring the `gcd_coprocessor`, since you will need fewer wires to place both GCD instances.
 
-<!-- #### Setting up for PAR -->
-
-First, synthesize your design:
-
-```shell
-make syn
-```
-
-<span style="color:red"> **Before proceeding, make sure your design meets timing at the default clock period. If your design fails timing, then you need modify your design to ensure it meets timing.** </span>
-
-Next, run the following commands to run place and route ***only until the end of CTS***:
-```shell
-make syn-to-par
-make redo-par HAMMER_EXTRA_ARGS="--stop_after_step clock_tree"
-```
-
-The first command here translates the outputs of the synthesis tool to conform to the inputs expected by the PAR tool. The second command is similar to the partial synthesis commands we used in the last lab.  HAMMER will wait until *Innovus* is done with the PAR steps through post-CTS optimization then ends PAR.
-
-<!-- You will see that HAMMER again gives you an error - similar to last lab when HAMMER expected a synthesized output, this time HAMMER expects the full flow to be completed and gives an error whenever it can’t find some collateral expected of PAR. -->
-
-Once done, look into the *build/par-rundir* folder. Similar to how all the synthesis files were placed under *build/syn-rundir* folder in the previous lab, this folder holds all the PAR files. Let's look at the most important outputs from PAR:
+You will also find stub code for an arbiter in `src/gcd_arbiter.v`, which you should complete. We will use the arbiter to route traffic to GCD units and preserve the response ordering. Most of your design can be implemented with combinational logic, but you will need some state to remember which GCD block contains the earliest data to preserve ordering.
 
 
+<!--
+### Optional Exercise: Step-by-Step with OpenROAD
 
-
-- *par.tcl*: HAMMER generated this file for *Innovus* to consume in batch mode, and inside are Innovus Common UI commands as a TCL script. 
-  
-- *timingReports*: the directory containing the pre-CTS timing reports. `gcd_coprocessor_preCTS_all.tarpt.gz` contains the report in a g-zipped archive. The remaining files also contain useful information regarding capacitances, length of wires etc. You may view these directly using Vim, unzip them using `gzip`, or navigate through them with Caja, the file browser.
-  
-- *hammer_cts_debug*: the directory containing the post-CTS timing reports. The two important archives are `hammer_cts_all.tarpt.gz` and `hammer_cts_all_hold.tarpt.gz`. These contain the setup and hold timing analyses results after post-CTS optimization. Look into the hold report (you may actually see some violations!). However, any violation should be small (<1 ps) and because we have a lot of margins during design (namely the `design.yml` file has “clock uncertainty” set to 100 ps), these small violations are not of concern, but should still be investigated in a real design.
-
-                           	
-### Optional Exercise: Step-by-Step with Innovus
-As an **optional** exercise, step through the *Innovus* using the commands from *par.tcl*. While entering the commands you will see *Innovus* print out information about the progress of each step. Make sure you are in the directory *build/par-rundir* and type:
+As an **optional** exercise, step through the *OpenROAD* using the commands from *par.tcl*. While entering the commands, you will see *OpenROAD* print out information about the progress of each step. Make sure you are in the directory *build/par-rundir* and type:
 
 ```shell
-innovus -common_ui
+cd build/par-rundir
+~/.conda-openroad/bin/openroad
 ```
-Now, follow *par.tcl* command-by-command, copying and pasting the commands to the Innovus shell and looking at the GUI for any changes. You may skip the `puts` commands as they just tell the tool to print out what its doing, and the `write_db` commands which write a checkpoint database between each step of the PAR flow. The steps that you will see significant changes are listed below. As you progress through the steps, feel free to zoom in to investigate what is going on with the design, look at the extra TCL files that are sourced, and cross-reference the commands with the command reference manual at `/home/ff/eecs151/labs/manuals/TCRcom.pdf`.
+
+This should open the OpenROAD shell (command user interface). Now, follow *par.tcl* command by command, copying and pasting the commands to the OpenROAD shell and looking at the GUI for any changes. You may skip the `puts` commands, as they just tell the tool to print out what it is doing, and the `write_db` commands, which write a checkpoint database between each step of the PAR flow. The steps after which you will see significant changes are listed below:
 
 1. After the command sourcing `floorplan.tcl`
 2. After the command sourcing `power_straps.tcl`
 3. After the command `edit pin`
 4. After the command `place_opt_design`
 
-After the `ccopt_design` command is run, you may see a bunch of white X markers on your design. These are some Design Rule Violations (DRVs), indicating Innovus didn’t quite comply with the technology’s requirements. Ignore these for the purposes of this lab.
+
+After the `ccopt_design` command is run, you may see a bunch of white X markers on your design. These are some Design Rule Violations (DRVs), indicating OpenROAD didn't quite comply with the technology's requirements. Ignore these for the purposes of this lab.
+
+As you progress through the steps, feel free to zoom in to investigate what is going on with the design, look at the extra TCL files that are sourced, and cross-reference the commands by typing `help` in the OpenROAD shell. There is also a possibility to [install](https://openroad.readthedocs.io/en/latest/main/src/utl/README.html#man-installation) the `man` pages command, but we will not do that in this course.--> <!--with the command reference manual at `/home/ff/eecs151/labs/manuals/TCRcom.pdf`.-->
+
+<!--make redo-par HAMMER_EXTRA_ARGS="--stop_after_step clock_tree"-->
+<!-- You will see that Hammer again gives you an error - similar to last lab when Hammer expected a synthesized output, this time Hammer expects the full flow to be completed and gives an error whenever it can't find some collateral expected of PAR. -->
 
 
-## Visualizing the Results
+## Questions
 
-From the `build/par-rundir` folder, execute the following in a terminal with graphics (X2Go highly recommended for low latency):
+
+### Question 1: Interpreting GCD PAR Reports
+
+<ol type="a">
+<li> What is the critical path of your design pre- and post-CTS? Is it the same as the post-synthesis critical path? </li>
+
+<li> Look in the post-layout text timing report (`build/par-rundir/reports/rcx_sta.checks.max.setup.rpt`). Find a path inside which the same type of cell is used more than once. Identify the delay of those instances of that common cell. Can you explain why they are different? </li>
+
+<li>  What is the skew between the clock that arrives at the flip-flops at the beginning and end of the post-CTS critical path? Does this skew help or hurt the timing margin calculation? </li>
+</ol>
+
+
+Thought Experiments (UNGRADED):
+<ol type="a">
+  <li> Why is it harder to meet both setup and hold timing constraints if the clock tree has a large insertion delay? </li>
+
+  <li> Why does fixing one setup or hold error introduce one or multiple errors? Is it more likely to produce an error of the same or different type, and why? </li>
+
+<!--  <li> PAR tools have a goal to minimize power while ensuring that all paths have >0 ps of slack. What might a timing path histogram look like in a design that has maximized the frequency it can run at while meeting this goal? Given the histogram obtained here, does it look like we can increase our performance? What might we need to improve/change? </li>-->
+</ol>
+
+
+Internal  Switching    Leakage      Total
+
+### Question 2: Understanding PAR Steps
+
+<ol type="a">
+<li> Examine the power straps on met1, in relation to the cells. You will need to zoom in far enough to see the net label on the straps. What does their pattern tell you about how digital standard cells are constructed? </li>
+
+<li> Take a note of the orientations of power straps and routing metals. If you were to place pins on the right side of this block instead of the bottom, what metal layers could they be on? </li>
+</ol>
+
+
+
+### Question 3: GCD Coprocessor Design
+
+<ol type="a">
+<li> Commit your code (`gcd_coprocessor.v` and `fifo.v`) and show that your code works (Questa Sim waveforms and transcript are fine). </li>
+</ol>
+
+
+### Question 4: Parallelization
+
+a) Submit your code (`gcd_coprocessor.v` and `gcd_arbiter.v`) with your lab assignment.
+
+b) How many cycles did your simulation take? What was the % speedup?
+
+c) Run synthesis. What is the area consumed by your design? What percentage of the total area does the arbiter occupy?
+
+<!--d) Submit a screenshot of your setup slack histogram. Compared with the histogram you obtained in lab 4, does your new slack distribution support the observed performance improvements you obtained in your coprocessor?-->
+
+
+### Question 5: Trade-offs
+
+a) Re-run the flow using your old design. To prevent your `build` directory from being overwritten, set the `OBJ_DIR` Makefile variable to a different name. Using the area and power values from OpenROAD, **how does the performance improvement from the dual-unit design compare to area occupation and power consumption increase compared to your old design?**
+
+b) Modify your `gcd_coprocessor.v` to take an input parameter in terms of the number of clock cycles we want our design to meet (`parameter TARGET_NUMBER_OF_CYCLES`) for this given testbench. Your code should generate a low-area, low-power design if the number is greater than that your simple GCD coprocessor can achieve, and it should generate the dual-unit design if it is lower. **Submit your code.**
+
+Hint: Use the Verilog `generate` syntax for choosing between designs. See [here](https://www.chipverify.com/verilog/verilog-generate-block) for documentation on how to use the `generate` syntax.
+
+c) (Optional) Using a rough estimate of the target number of cycles versus the number of units in the design, write a code that will generate 1-8 cores depending on the performance demand. Do NOT do this by writing out every possible case explicitly. You can limit the number of units to powers of two (1, 2, 4, 8) if it makes your life easier.
+
+<!--
+### Question 6: (optional) Automated Flow
+
+First, synthesize your new desigN:
 
 ```shell
-./generated-scripts/open_chip
-```
-The Innovus GUI should pop up with your layout, and the *Innovus* shell runs in your terminal. After the window opens, click anywhere inside the black window at the center of the GUI and press “F” to zoom-to-fit. You should see your entire design, which should look roughly similar to the one below once you disable the V5 and M5 layers using the right panel by unchecking their respective boxes under the "V" column:
-
-> ### Checkoff 1: Innovus 
-> Demonstrate that you are able to succesfully PAR your design by showing a TA the layout in Innovus. Also, show the TA a specific standard cell and identify what type of cell it is.
->
-> &nbsp;
-
-<p align="center">
-<img src="./figs/sky130/innovus_window.png" width="500" />
-</p>
-
-### Familiarize Yourself with the Innovus GUI
-Take a moment to familiarize yourself with the Innovus GUI. You should also toggle between the floorplan, amoeba, and placement views using the buttons that look like this: <img src="./figs/view_icons.png" width="40" />  and examine how the actual placement of the GCD datapath in ameoba view doesn’t follow our soft placement guidance in floorplan view. This is because our soft placement guidance clearly places the datapath farther away from the pins and would result in a worse clock tree!
-
-Now, let’s take a look at the clock tree a couple different ways. In the right panel, under the “Net” category, hide from view all the types of nets except “Clock”. Your design should now look approximately like this, which shows the clock tree routing:
-
-<p align="center">
-<img src="./figs/sky130/clock_tree_nets.png" width="500" />
-</p>
-
-
-We can also see the clock tree in its “tree” form by going to the menu Clock → CCOpt Clock Tree Debugger and pressing OK in the popup dialog. A window should pop up looking approximately like this:
-
-<p align="center">
-<img src="./figs/sky130/clock_tree_debugger.png" width="500" />
-</p>
-
-
-The red dots are the “leaves”, the green triangles are the clock buffers, the blue dots are clock gates (they are used to save power), and the green pin on top is the clock pin or the clock “root”. The numbers on the left side denote the insertion delay in ps.
-
-Now, let’s visualize our critical path. Go to the menu Timing → Debug Timing and press OK in the popup dialog. A window will pop up that looks approximately like this:
-
-<p align="center">
-<img src="./figs/sky130/timing_debug.png" width="500" />
-</p>
-
-Examine the histogram. This shows the number of paths for every amount of slack (on the x-axis), and you always want to see a green histogram! The shape of the histogram is a good indicator of how good your design is and how hard the tool is working to meet your timing constraints (*thought experiment #3:* how so, and what would be the the ideal histogram shape?).
-
-Now right-click on Path 1 in this window (the critical path), select Show Timing Analyzer and Highlight Path, and select a color. A window will pop up, which is a graphical representation of the timing reports you saw in the hammer cts debug folder. Poke around the tabs to see all the different representations of this critical path. Back in the main Innovus window, the critical path will be highlighted, showing the chain of cells along the path and the approximate routing it takes to get there, which may look something like this:
-
-<p align="center">
-<img src="./figs/sky130/critical_path_highlight.png" width="500" />
-</p>
-
-
-When you are done, you may exit Innovus by closing the GUI window.
-
-
-Now zoom in to one of the cells and click the box next to “Cell” on the right panel of the GUI. This will show you the internal routing of the standard cells. While by default we have this off, it may prove useful when investigating DRVs in a design. You can now exit the application by closing the GUI window.
-
-## ALU
-In this section, you will be designing and testing an ALU for later use in the semester. A header file containing define statements for operations (`ALUop.vh`) is provided inside the *src* directory of this lab. This file has already been included in an ALU template given to you in the same folder (`ALU.v`), but you may need to modify the include statement to match the correct path of the header file. Compare `ALUop` input of your ALU to the define statements inside the header file to select the function ALU is currently running. For `ADD` and `SUB`, treat the operands as unsigned integers and ignore overflow in the result. Definition of the functions is given below:
-  
-| Op Code |                         Definition                        |
-|:-------:|:---------------------------------------------------------:|
-|   ADD   |                         Add A and B                       |
-|   SUB   |                      Subtract B from A                    |
-|   AND   |                    Bitwise `and` A and B                  |
-|    OR   |                     Bitwise `or` A and B                  |
-|   XOR   |                    Bitwise `xor` A and B                  |
-|   SLT   |        Perform a signed comparison, Out=1 if  A < B       |
-|   SLTU  |      Perform an unsigned comparison, Out = 1 if A < B     |
-|   SLL   |   Logical shift left A by an amount indicated by B[4:0]   |
-|   SRA   | Arithmetic shift right A by an amount indicated by B[4:0] |
-|   SRL   |   Logical shift right A by an amount indicated by B[4:0]  |
-|  COPY_B |                    Output is equal to B                   |
-|   XXX   |                        Output is 0                        |
-
-Given these definitions, complete `ALU.v` and write a testbench tb `ALU.v` that checks all these operations with random inputs at least a 100 times per operation and outputs a PASS/FAIL indicator. For this lab, we will only check for effort and not correctness, but you will need it to work later!
-
-> ### Checkoff 2: ALU
-> Demonstrate the functionality of your ALU and testbench to the TA.
->
-> &nbsp;
-
-To make the Verilog `include` statements work correctly, add this to the list of VCS options in your sim-rtl YML:
-```
-options:
-- "+incdir+../../src"
+make syn
 ```
 
----
+<span style="color:red"> **Before proceeding, make sure your design meets timing at the default clock period. If your design fails timing, then you need to modify your design to ensure it meets timing.** </span>
+Then, simulate the synthesized design to make sure it still works:
+
+```shell
+make sim-gl-syn
+```
+
+Next, run the following commands to run place and route.
+
+Run the following:
 
 
+```shell
+make timing-syn
+make par
+```
 
-# Questions
+a) Check the post-synthesis timing report (`syn-rundir/reports/final_time_ss_100C_1v60.setup_view.rpt`) and post-PAR timing report (`par-rundir/timingReports/gcd_coprocessor_postRoute_all.tarpt`).
+**What are the critical paths of your post-PAR and post-synthesis designs? Are they the same path? How does this critical path compare to your single-unit critical path?**
 
-### Question 1: Design
-<ol type="a">
-<li> Submit your code (`gcd_coprocessor.v` and `fifo.v`) and show that your code works (VCS output is fine)</li>
-</ol>
+b) Open the post-CTS timing report (`par-rundir/hammer_cts_debug/hammer_cts_all.tarpt`) and the post-PAR timing report (`par-rundir/timingReports/gcd_coprocessor_postRoute_all.tarpt`).
+**Find a common path (same start and end sequential elements). What differences do you notice within the paths?**
 
-### Question 2: Interpreting PAR Timing Reports
-<ol type="a">
-<li>What is the critical path of your design pre- and post-CTS? Is it the same as the post-synthesis critical path?</li>
+c) *(optional)* Iterate on your design by modifying `design.yml` to find a rough estimate (no need to be too precise) for the clock period until you start running into setup errors. Given the number of cycles it takes to complete the testbench, what is the shortest time your design can finish the computation?-->
 
-<li> Look in the post-CTS text timing report (`hammer_cts_debug/hammer_cts.all.tarpt`). Find a path inside which the same type of cell is used more than once. Identify the delay of those instances of that common cell. Can you explain why they are different?</li>
-
-<li>  What is the skew between the clock that arrives at the flip-flops at the beginning and end of the post-CTS critical path? Does this skew help or hurt the timing margin calculation?</li>
-</ol>
-
-
-Thought Experiements (UNGRADED):
-<ol type="a">
-  <li>Why is it harder to meet both setup and hold timing constraints if the clock tree has large insertion delay?</li>
-
-  <li> Why does fixing one setup or hold error introduce one or multiple errors? Is it more likely to produce an error of the same, or different type, and why?</li>
-
-  <li>PAR tools have a goal to minimize power while ensuring that all paths have have >0ps of slack. What might a timing path histogram look like in a design that has maximized the frequency it can run at while meeting this goal? Given the histogram obtained here, does it look we can increase our performance? What might we need to improve/change?</li>
-</ol>
-
-### Question 3: Understanding PAR Steps
-<ol type="a">
-<li> Examine the power straps on M1, in relation to the cells. You will need to zoom in far enough to see the net label on the straps. What does their pattern tell you about how digital standard cells are constructed?</li>
-
-<li> Take a note of the orientations of power straps and routing metals. If you were to place pins on the right side of this block instead of the bottom, what metal layers could they be on?</li>
-</ol>
-
-### Question 4: ALU
-<ol type="a">
-<li> Submit the code for both your ALU module as well as for the testbench. 
-To make the Verilog `include` statements work correctly, add this to the list of VCS options in your sim-rtl YML:<code>
-options: <br>
-&nbsp;  - "+incdir+../../src"
-</code>
-</li>
-</ol>
-
-## Lab Deliverables
-
-### Lab Due: 11:59 PM, 1 week after your lab section.
-
-- Submit your answers electronically to Gradescope
-- Submit your code by pushing to your GitHub repository
-- Checkoff with an ASIC lab TA
-
-## Acknowledgement
-
-This lab is the result of the work of many EECS151/251 GSIs over the years including:
-Written By:
-- Nathan Narevsky (2014, 2017)
-- Brian Zimmer (2014)
-
-Modified By:
-- John Wright (2015,2016)
-- Ali Moin (2018)
-- Arya Reais-Parsi (2019)
-- Cem Yalcin (2019)
-- Tan Nguyen (2020)
-- Harrison Liew (2020)
-- Sean Huang (2021)
-- Daniel Grubb, Nayiri Krzysztofowicz, Zhaokai Liu (2021)
-- Dima Nikiforov (2022)
-- Roger Hsiao, Hansung Kim (2022)
-- Chengyi Lux Zhang, (2023)
-- Kevin Anderson, Kevin He (Sp2024)

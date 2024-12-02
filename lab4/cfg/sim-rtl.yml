@@ -1,0 +1,13 @@
+# RTL Simulation Variables
+sim.inputs:
+  input_files:
+    - "src/gcd.v"
+    - "src/gcd_datapath.v"
+    - "src/gcd_control.v"
+    - "src/EECS151.v"
+    - "src/gcd_testbench.v"
+  timescale: "1ns/10ps"
+  top_module: "gcd"
+  tb_name: "gcd_testbench"
+  defines: 
+    - "CLOCK_PERIOD=10.00"

@@ -1,0 +1,64 @@
+# Technology used is Sky130
+technology.sky130:
+  sky130A: "~/open_pdks/sky130/sky130A/"
+  sram22_sky130_macros: "~/sram22_sky130_macros"
+
+# Specify the setup and hold corners for Sky130
+vlsi.inputs.mmmc_corners: [
+  {name: "ss_100C_1v60", type: "setup", voltage: "1.60 V", temp: "100 C"},
+  {name: "ff_n40C_1v95", type: "hold", voltage: "1.95 V", temp: "-40 C"}
+]
+
+# Specify this since we are not using macrocompiler
+vlsi.inputs:
+  supplies.VDD: "1.8 V"
+  power_spec_mode: "auto"
+  power_spec_type: "cpf"
+  sram_parameters: "HAMMER_PATHhammer/technology/sky130/sram-cache.json"
+  sram_parameters_meta: ["transclude", "json2list"]
+
+vlsi.core:
+  technology: "hammer.technology.sky130"
+  sim_tool: "hammer.sim.questa"
+  synthesis_tool: "hammer.synthesis.yosys"
+  par_tool: "hammer.par.openroad"
+  power_tool: "hammer.power.voltus" # perhaps switch to openroad
+  timing_tool: "hammer.timing.openroad"
+  drc_tool: "hammer.drc.klayout"
+  lvs_tool: "hammer.lvs.netgen"
+  sram_generator_tool: "hammer.technology.sky130.sram_compiler"
+  build_system: make
+  max_threads: 4
+
+# Place & route setup
+par.inputs.gds_merge: true
+
+# Power Straps
+par.power_straps_mode: generate
+par.generate_power_straps_method: by_tracks
+par.blockage_spacing: 2.0
+par.blockage_spacing_top_layer: met3
+par.generate_power_straps_options:
+  by_tracks:
+    strap_layers:
+      - met2
+      - met3
+      - met4
+      - met5
+    blockage_spacing_met2: 4.0
+    track_width: 6
+    track_width_met5: 2
+    track_spacing: 1
+    track_start: 10
+    track_start_met5: 1
+    power_utilization: 0.2
+    power_utilization_met2: 0.05
+    power_utilization_met5: 0.5  # TODO: try to increase this if possible
+
+# Tool binaries
+synthesis.yosys.yosys_bin: ~/.conda-yosys/bin/yosys
+par.openroad.openroad_bin: ~/.conda-openroad/bin/openroad
+par.openroad.klayout_bin: ~/.conda-klayout/bin/klayout
+drc.klayout.klayout_bin: ~/.conda-klayout/bin/klayout
+drc.magic.magic_bin: ~/.conda-signoff/bin/magic
+lvs.netgen.netgen_bin: ~/.conda-signoff/bin/netgen

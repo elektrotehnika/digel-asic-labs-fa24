@@ -1,0 +1,14 @@
+# Post-Synthesis Gate-Level Simulation Variables
+sim.inputs:
+  input_files:
+    - "src/gcd_testbench.v"
+  input_files_meta: append
+  level: "syn"
+  timing_annotated: true
+  timescale: "1ns/10ps"
+  top_module: "gcd"
+  tb_name: "gcd_testbench"
+  defines: 
+    - "CLOCK_PERIOD=10.00"
+    - "FUNCTIONAL"
+    - "UNIT_DELAY=#1"

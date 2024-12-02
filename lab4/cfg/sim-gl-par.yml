@@ -1,0 +1,18 @@
+# Post-Synthesis Gate-Level Simulation Variables
+sim.inputs:
+  input_files:
+    - "src/gcd_testbench.v"
+  input_files_meta: append
+  level: "par"
+  timing_annotated: true
+  saif:
+    mode: "full"
+  timescale: "1ns/10ps"
+  top_module: "gcd"
+  tb_name: "gcd_testbench"
+  defines: 
+    - "CLOCK_PERIOD=10.00"
+
+# power.inputs:
+#   database: "build/par-rundir/gcd_coprocessor_FINAL"
+#   tb_name: "gcd_testbench"
