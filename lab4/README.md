@@ -334,9 +334,9 @@ Let's set up the prerequisites for PAR and run PAR:
 make syn
 make timing-syn
 make syn-to-par
-#make par
+#make par # see the Note below
 make redo-par HAMMER_EXTRA_ARGS="--stop_after_step extraction"
-make redo-par HAMMER_EXTRA_ARGS="--start_before_step write_design"
+make redo-par HAMMER_EXTRA_ARGS="--start_before_step extraction"
 ```
 
 > Note: OpenROAD sometimes freezes on commands following the *detailed_route* step (say, "report_check_types"), so for now we recommend running place and route until the *extraction* step, then restarting the flow at this step. See Hammer [flow control](https://hammer-vlsi.readthedocs.io/en/latest/Hammer-Use/Flow-Control.html) for more info.
@@ -528,7 +528,7 @@ Also, remember to include a short explanation of each answer (2-4 sentences) wit
 
 ### Question 1: Interpreting GCD PAR Reports
 
-1. What is the critical hold timing path of your design:
+1. What is the critical hold timing path and slack of your design:
   - after synthesis? (trick question)
   - after CTS?
   - after routing?
@@ -536,12 +536,12 @@ Also, remember to include a short explanation of each answer (2-4 sentences) wit
 
 2. Look in the post-layout text timing report (`build/par-rundir/reports/rcx_sta.checks.max.setup.rpt`). Find a path inside which the same type of cell is used more than once. Identify the delay of those instances of that common cell. Can you explain why they are different?
 
-3. Which post-layout report contains the <u>worst case</u> power consumption and why? What is the total power consumption value?
+3. Which post-layout report contains the <u>worst case</u> power consumption and **why**? What is the total power consumption value?
 
 
 ### Question 2: Understanding PAR
 
-1. Take a note of the orientations of power straps and routing metals. If you were to place pins on the right side of this block instead of the bottom, what metal layers could they be on?
+1. Take a note of the orientations of power straps and routing metals. If you were to place pins on the right side of this block instead of the bottom, what metal layers should they be on?
 
 2. Name at least 5 different DRC check types that need to be checked before a design is sent for tape-out.
 
@@ -558,7 +558,7 @@ Thought Experiments (UNGRADED):
 
 ### Question 3: GCD Coprocessor Design
 
-1. Commit your code (`gcd_coprocessor.v` and `fifo.v`)  and the corresponding YAML files to `ans/Q4/cfg` and show that your code works (Questa Sim waveforms and transcript are fine).
+1. Commit your code (`gcd_coprocessor.v` and `fifo.v`) to `ans/Q3/src` and the corresponding YAML files to `ans/Q3/cfg` and show that your code works (Questa Sim waveforms and transcript are fine).
 
 
 ### Question 4: Parallelization
@@ -574,9 +574,9 @@ Thought Experiments (UNGRADED):
 
 ### Question 5: Parametrization
 
-1. Modify your `gcd_coprocessor_parallel.v` to take an input parameter in terms of the number of clock cycles we want our design to meet (`parameter TARGET_NUMBER_OF_CYCLES`) for this given testbench. Your code should generate a low-area, low-power design if the number is greater than that your simple GCD coprocessor can achieve, and it should generate the dual-unit design if it is lower. **Submit your code.** *Hint*: Use the Verilog `generate` syntax for choosing between designs. See [here](https://www.chipverify.com/verilog/verilog-generate-block) for documentation on how to use the `generate` syntax.
+1. Modify your `gcd_coprocessor_parallel.v` to take an input parameter in terms of the number of clock cycles we want our design to meet (`parameter TARGET_NUMBER_OF_CYCLES`) for this given testbench. Your code should generate a low-area, low-power design if the target number is greater than that your simple GCD coprocessor can achieve, and it should generate the dual-unit design if it is lower. **Submit your code.** *Hint*: Use the Verilog `generate` syntax for choosing between designs. See [here](https://www.chipverify.com/verilog/verilog-generate-block) for documentation on how to use the `generate` syntax.
 
-2. Run synthesis and post-synthesis STA for `TARGET_NUMBER_OF_CYCLES` values of 225 and 200. Commit the reports to `ans/Q5/rpt`.
+2. Run synthesis and post-synthesis STA for `TARGET_NUMBER_OF_CYCLES` values of 225 and 200. Commit the reports to `ans/Q5/rpt`. What is the difference in PPA between these two designs and your original `gcd_coprocessor_parallel` from Question 4?
 
 3. (Optional) Using a rough estimate of the target number of cycles versus the number of units in the design, write a code that will generate 1-8 cores depending on the performance demand. Do NOT do this by writing out every possible case explicitly. You can limit the number of units to powers of two (1, 2, 4, 8) if it makes your life easier.
 
@@ -584,7 +584,7 @@ Thought Experiments (UNGRADED):
 ### Question 6: Optional PAR
 
 This question is optional, and it can be done to earn bonus points.
-Run the entire ASIC design flow (RTL simulation, synthesis + STA, place and route, gate-level simulation) for your new designs `gcd_processor` and `gcd_processor_parallel`.
-Update the `TOP` variable in the Makefile accordingly. You may relax the clock period to 20 ns. Try to achieve no timing violations and a total number of DRCs less than 20.
+Run the entire ASIC design flow (RTL simulation, synthesis + STA, place and route, gate-level simulation) for your new designs: `gcd_processor` from Question 3 and `gcd_processor_parallel` from Question 4 or 5.
+Update the `TOP` variable in the Makefile accordingly. Try to achieve no timing violations and a total number of DRCs less than 20. Beware: the routing runtime can be significantly long!
 
 Commit all relevant source files (`src/*`, `cfg/*`, Makefile) to `ans/Q6/`. Also, commit your entire build directories to the `ans/Q6/build` directory.
