@@ -29,6 +29,12 @@ vlsi.inputs.placement_constraints:
       right: 10
       top: 10
       bottom: 10
+# - path: "gcd/GCDdpath0"
+#   type: "placement"
+#   x: 100
+#   y: 100
+#   width: 100
+#   height: 100
 
 # Pin placement constraints
 vlsi.inputs.pin_mode: generated

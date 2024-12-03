@@ -8,6 +8,8 @@ sim.inputs:
   timescale: "1ns/10ps"
   top_module: "gcd"
   tb_name: "gcd_testbench"
+  tb_dut: "gcd"
+  sdf_corner: "max"
   defines: 
     - "CLOCK_PERIOD=10.00"
     - "FUNCTIONAL"

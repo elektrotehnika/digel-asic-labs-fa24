@@ -5,11 +5,11 @@ sim.inputs:
   input_files_meta: append
   level: "par"
   timing_annotated: true
-  saif:
-    mode: "full"
   timescale: "1ns/10ps"
   top_module: "gcd"
   tb_name: "gcd_testbench"
+  tb_dut: "gcd"
+  sdf_corner: "max"
   defines: 
     - "CLOCK_PERIOD=10.00"
 

@@ -46,7 +46,7 @@ module gcd_coprocessor_testbench;
   reg [15:0] test_B [num_tests-1:0];
   reg [15:0] test_results [num_tests-1:0];
 
-  gcd_coprocessor #(16) dut (
+  gcd_coprocessor /*#(16)*/ dut (
     .clk(clk),
     .reset(reset),
     .operands_val(operands_val),
