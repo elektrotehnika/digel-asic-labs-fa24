@@ -30,8 +30,8 @@ All labs must be checked off **before** your next lab session.
 |  1  |  not after 10/25  | 11/04 (11:59pm) |
 |  2  |  not after 11/05  | 11/18 (11:59pm) |
 |  3  |  not after 11/19  | 12/02 (11:59pm) |
-|  4  |  not after 12/03  | 12/16 (11:59pm) |
-|  5  |  not after 12/17  | 12/30 (11:59pm) |
+|  4  |  not after 12/03  | 12/22 (11:59pm) |
+|  5  |  not after 12/23  | 12/30 (11:59pm) |
 
 
 ## Introduction
