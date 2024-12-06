@@ -103,6 +103,8 @@ sim-gl-syn: $(HAMMER_D_MK) $(INPUT_SIM_GL_SYN_DB)
 
 .PHONY: sim-gl-par
 sim-gl-par: $(HAMMER_D_MK) $(INPUT_SIM_GL_PAR_DB)
+	cp --update $(pdk_dir)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v $(OBJ_DIR)/tech-sky130-cache/primitives.v
+	cp --update $(hammer_dir)/e2e/tech-sky130-cache/sky130_fd_sc_hd.v $(OBJ_DIR)/tech-sky130-cache/sky130_fd_sc_hd.v
 	$(HAMMER_EXEC) -p $(TECH_CONF) -p $(SIM_GL_PAR_CONF) -p $(INPUT_SIM_GL_PAR_DB) --obj_dir $(OBJ_DIR) sim
 
 #########################################################################################
