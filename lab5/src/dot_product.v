@@ -1,9 +1,9 @@
 // Implement a vector dot product of a and b
-// using a single-port SRAM of 5-bit address width, 16-bit data width
+// using a single-port SRAM of 5-bit address width, 32-bit data width
 
 module dot_product #(
-  localparam ADDR_WIDTH = 5,
-  localparam WIDTH = 32
+  parameter ADDR_WIDTH = 5,
+  parameter WIDTH = 32
 ) (
   input clk,
   input rst,
@@ -21,31 +21,28 @@ module dot_product #(
   output reg b_ready,
 
   // dot product result c
-  output [WIDTH-1:0] c_data,
+  output reg [WIDTH-1:0] c_data,
   output reg c_valid,
   input c_ready
 );
 
-localparam STATE_READ = 2'd0;
-localparam STATE_CALC_LOAD_A = 2'd1;
-localparam STATE_CALC_LOAD_B = 2'd2;
-localparam STATE_CALC_DONE = 2'd3;
+// State machine variables
+reg [1:0] state;
+localparam RECV = 2'd0;
+localparam CALC = 2'd1;
+localparam SEND = 2'd2;
 
-wire a_fire, b_fire, c_fire;
-assign a_fire = a_valid && a_ready;
-assign b_fire = b_valid && b_ready;
-assign c_fire = c_valid && c_ready;
-
+// SRAM signals
 reg we;
-wire [3:0] wmask = 4'b1111;
-reg [ADDR_WIDTH:0] addr;
 reg [WIDTH-1:0] din;
 wire [WIDTH-1:0] dout;
+reg [ADDR_WIDTH:0] addr;
 
+// SRAM instance
 sram22_64x32m4w8 sram (
   .clk(clk),
   .we(we),
-  .wmask(wmask),
+  .wmask(4'b1111),
   .addr(addr),
   .din(din),
   .dout(dout)

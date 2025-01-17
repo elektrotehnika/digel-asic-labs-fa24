@@ -3,17 +3,10 @@ sim.inputs:
   input_files:
     - "src/dot_product.v"
     - "src/dot_product_tb.v"
-  # Add more files here for testing if you like
+    - "~/sram22_sky130_macros/sram22_64x32m4w8/sram22_64x32m4w8.v"
+    # Add more files here for testing if you like
   timescale: "1ns/10ps"
-  options:
-    - "-notice"
-    - "-line"
-    - "+lint=all,noVCDE"
-    - "+v2k"
-    - "-debug"
-    - "-sverilog"
-    - "-lca"
   top_module: "dot_product"
   tb_name: "dot_product_tb"
   defines: 
-    - "CLOCK_PERIOD=5.00"
+    - "CLOCK_PERIOD=20.00"
