@@ -120,7 +120,7 @@ Macro databases (files) usually also include a non-synthesizable HDL model, whic
 
 In this lab, an SRAM is a design component. Let's look at it to understand how a hard macro is integrated into a digital design.
 
-The SKY130 PDK does not come with SRAMs by default, so an SRAM generator called [SRAM22](https://github.com/rahulk29/sram22) was develop at UC Berkeley to programmatically generate SRAMs of varying dimensions. These SRAMs are synchronous-write and synchronous-read; the read data is only available at the next rising edge, and the write data is only written at the next rising edge. Hard macros are instantiated as black boxes that are connected to the rest of the circuit as specified in your Verilog. For Synthesis and PAR, the SRAMs must be abstracted away from the tools, because the only things that the flow is concerned about at these stages are the timing characteristics and the outer layout geometry of the SRAM macros. For simulation purposes, Verilog behavioral models for the SRAMs from the Hammer repository are used.
+The SKY130 PDK does not come with SRAMs by default, so an SRAM generator called [SRAM22](https://github.com/rahulk29/sram22) was develop at UC Berkeley to programmatically generate SRAMs of varying dimensions. These SRAMs are synchronous-write and synchronous-read; the read data is only available at the next rising edge, and the write data is only written at the next rising edge. Hard macros are instantiated as black boxes that are connected to the rest of the circuit as specified in your Verilog. For synthesis and PAR, the SRAMs must be abstracted away from the tools, because the only things that the flow is concerned about at these stages are the timing characteristics and the outer layout geometry of the SRAM macros. For simulation purposes, Verilog behavioral models for the SRAMs from the Hammer repository are used.
 
 Below is the instantiation of the SRAM from *src/dot_product.v*. This is the SRAM you will use for your design.
 
@@ -140,8 +140,10 @@ The specifications for the SRAM are contained in the name: *sram22_64x32m4w8* (t
 
 ### Using SRAMs generated with SRAM22
 
-During the setup of SKY130, a GitHub repository [sram22_sky130_macros](https://github.com/rahulk29/sram22_sky130_macros) (commit **1f20d16**) which contains SKY130 SRAM macros generated with SRAM22 was cloned to *~/sram22_sky130_macros*. It includes all relevant files (GDS, LIB, LEF, Verilog, etc.) for several SRAM macro instances.
-Peruse the directory to see the dimensions of SRAMs available to you. The SRAMs that we have in this process only support single-port memories, but in other processes, you may be able to use SRAMs with different numbers of ports. The SRAM Verilog models are only intended for simulation. **Do not include these files in your configuration for Synthesis or PAR**, or else you will produce incorrect post-synthesis or post-PAR netlists.
+During the setup of SKY130, a GitHub repository [sram22_sky130_macros](https://github.com/rahulk29/sram22_sky130_macros) (commit **1f20d16**) which contains SKY130 SRAM macros generated with SRAM22 was cloned to *~/sram22_sky130_macros*. It includes all relevant files (GDS, LIB, LEF, Verilog, etc.) for several SRAM macros with different configurations.
+Peruse the directory to see the dimensions of SRAMs available to you. The SRAMs that we have in this process only support single-port memories, but in other processes, you may be able to use SRAMs with different numbers of ports. The SRAM Verilog models are only intended for simulation. **Do not include these models in your configuration for synthesis or PAR**, or else you will produce incorrect post-synthesis or post-PAR netlists.
+
+When you wish to update the (SRAM22) database of SRAM instances that Hammer sees, you need to run `make srams`, which generates `build/sram_generator-output.json`, the SRAM configuration file that is used within the Hammer flow. However, this should also be automatically done when you run `make buildfile` or, for example, `make syn`.
 
 
 ## Dot Product
@@ -154,7 +156,7 @@ In particular, note that:
 - The `len` input indicates vector length. Vectors can be a maximum of `32` elements long (although this is parametrized through `WIDTH`).
 - Elements from either vector can be fed concurrently.
 - All elements from both vectors should be stored in the SRAM prior to computation.
-- The SRAM is logically partitioned for each vector, with the vector `a` stored in the top half of the address range and the vector `b` stored in the bottom half of the address range. In other words, given that the vector index is zero-indexed, the i<sup>th</sup> entry of `a` should be stored at address `i` in the SRAM; the i<sup>th</sup> entry of `b` should be stored at address `32+i` in the SRAM.
+- The SRAM is logically partitioned for each vector, with the vector `a` stored in the bottom half of the address range and the vector `b` stored in the top half of the address range. In other words, given that the vector index is zero-indexed, the i<sup>th</sup> entry of `a` should be stored at address `i` in the SRAM; the i<sup>th</sup> entry of `b` should be stored at address `32+i` in the SRAM.
 - You should compute the dot product and provide it on the output ready-valid interface.
 
 Note that the SRAM can only perform one operation per cycle. So if both `a` and `b` have data ready to be written, you would need to write `a` to the SRAM in one cycle, then write `b` the next cycle (or vice versa).
@@ -172,7 +174,7 @@ To run RTL simulation, run the following command:
 make sim-rtl
 ```
 
-Ensure all tests pass. To inspect the RTL simulation waveform, run the following commands:
+Ensure all tests pass before continuing. To inspect the RTL simulation waveform, run the following commands:
 
 ```shell
 cd build/sim-rundir
@@ -184,18 +186,25 @@ qhsim -do "vsim -view build/sim-rundir/vsim.wlf"
 We will now run synthesis and PAR on your design:
 
 ```shell
+# potentially 'make buildfile' or make 'srams'
 make syn
 make syn-to-par
 make redo-par HAMMER_EXTRA_ARGS="-p build/sram_generator-output.json --stop_after_step extraction"
 make redo-par HAMMER_EXTRA_ARGS="-p build/sram_generator-output.json --start_before_step extraction"
 ```
 
-After PAR finishes, you can open the floorplan of the design by running:
+After PAR finishes, you can open the layout of the design by running:
 
 ```shell
 cd build/par-rundir
 ./generated-scripts/open_chip --timing
 ```
+
+It should look something like this:
+
+<p align="center">
+  <img src="./figs/dot_product_layout.png" width="800" />
+</p>
 
 This will launch *OpenROAD* GUI and load your final design database.
 This floorplan has one SRAM instance called `sram`.
@@ -210,12 +219,12 @@ Note that generally you should:
     - Legalizing the x and y coordinates. These generally need to be a multiple of a technology grid to avoid layout rule violations. The most conservative rule of thumb is a multiple of the site height (height of a standard cell row, which is 2.72um in this technology).
     - Ensuring that the macros receive power. You can see that the SRAMs in the layout above are placed beneath the met4 power straps. This because the SRAM's power pins are on met3.
 
-You can play around with those constraints to change the SRAM placement to a geometry you like.
+You can play around with those constraints to change the SRAM placement and design dimensions as you like.
 If you change the placement constraint only in `design.yml` and only want to redo PAR (skipping synthesis), you can run:
 
 ```shell
-make redo-par HAMMER_EXTRA_ARGS='-p build/sram_generator-output.json -p cfg/design.yml --stop_after_step extraction'
-make redo-par HAMMER_EXTRA_ARGS='-p build/sram_generator-output.json -p cfg/design.yml --start_before_step extraction'
+make redo-par HAMMER_EXTRA_ARGS="-p build/sram_generator-output.json -p cfg/design.yml --stop_after_step extraction"
+make redo-par HAMMER_EXTRA_ARGS="-p build/sram_generator-output.json -p cfg/design.yml --start_before_step extraction"
 ```
 
 Finally, we will perform post-PAR gate-level simulation.
@@ -224,7 +233,8 @@ Finally, we will perform post-PAR gate-level simulation.
 make sim-gl-par
 ```
 
-All tests should pass as in the case of RTL simulation. SDF annotation warnings for SDF instance is expected
+All tests should pass as in the case of RTL simulation. SDF annotation warnings for the SRAM instance are expected.
+Moreover, try to achieve no timing violations and no DRC errors.
 
 Theoretically, if you don't have any setup/hold time violations, your post-PAR gate-level simulation should pass.
 However, when you are pushing the timing constraints to the design's limit or not specifying them well enough, the gate-level simulation may not pass.
@@ -250,7 +260,7 @@ Based on the model, what happens to the `dout` port when a write operation is pe
 Note that other SRAM designs may have different behavior.
 
 c) Open one of the SRAM abstract (`*.lef`) files.
-Where are the pins located? Which layer are t           hey on? What layer are the power straps on?
+Where are the pins located? Which layer are they on? What layer are the power straps on?
 To verify, you can open LEFs in the KLayout GUI, by typing:
 
 ```shell
@@ -273,21 +283,23 @@ Knowing this, take a guess at how SRAMs are laid out.
 
 ### Question 2: Performance and Area Optimization
 
-a) Open your final design's floorplan.
-Identify one or more locations where the SRAM is connected to power and ground, and submit a screenshot.
+a) Commit your *dot_product* database, that is, all relevant source files (`src/*`, `cfg/*`, Makefile) to `ans/Q2/a`. Also, commit your entire build directory to the `ans/Q2/a/build` directory. As mentioned, try to achieve no timing violations and no DRC errors. Feel free to change the design constraints (area, pin & macro positions) in order to obtain better results. A single-digit number of DRC errors will be tolerated, but bonus points will be given for 0 DRC errors.
 
-b) Find the maximum clock frequency that gives no timing violations for your design, to the nearest 0.2 ns (slack < 0.2 ns).
+b) Open your final design's floorplan. Identify one or more locations where the SRAM is connected to power and ground, and submit a screenshot.
+
+c) Find the maximum clock frequency (`CLOCK_PERIOD` in `design.yml`) that gives no timing violations for your design (and for which all tests pass), to the nearest 0.4 ns (slack < 0.4 ns).
 Report the final frequency and describe (in English or Serbian) the critical path.
-Submit Questa transcript output from running `make sim-gl-par`, showing that you pass all tests using your post-PAR design.
-Also commit the *rcx_sta.checks.max.setup.rpt*, *rcx_sta.checks.min.hold.rpt*, and *dot_product_route_drc.rpt* reports.
+For the updated design, commit the post-layout *transcript*, *rcx_sta.checks.max.setup.rpt*, *rcx_sta.checks.min.hold.rpt*, *dot_product_route_drc.rpt* reports, and *openroad.log* to `ans/Q2/c`.
 Note that you'll need to update the `CLOCK_PERIOD` in `sim-gl-par.yml` to match the frequency at which you ran synthesis/PAR.
 
-c) The floorplan we've given you has lots of empty space.
-Revert the `CLOCK_PERIOD` to its default value and adjust the SRAM position and design area bounds to reduce the overall area of your design by 1/4.
-Make sure that your design is still passing timing, DRC check and post-layout simulation.
+d) The floorplan we've given you has lots of empty space.
+Revert the `CLOCK_PERIOD` to its default value and adjust the SRAM position and design area bounds to reduce the overall area of your design by ~1/3.
+If needed, perform optimization and make sure that your design is still passing DRC and STA checks and post-layout simulation.
 Report the final area used, the SRAM macro position, and submit a screenshot of your post-PAR layout with the *dot_product_route_drc.rpt* loaded in the DRC Viewer.
+Also, commit your *dot_product* database, that is, all relevant source files (`src/*`, `cfg/*`, Makefile) to `ans/Q2/d`. Also, commit your entire build directory to the `ans/Q2/d/build` directory.
+Did timing and power results get better or worse by reducing the area?
 
-d) How many cycles does your dot product module take for each of the test cases?
+e) How many cycles does your dot product module take for each of the test cases?
 Describe two ways to reduce the total cycle count.
-You don't need to implement these changes.
+You don't need to implement these changes!
 You are free to make reasonable modifications to the structure of the problem (e.g., you can change the inputs to be something other than ready/valid interfaces).

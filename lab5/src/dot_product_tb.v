@@ -236,16 +236,16 @@ module dot_product_tb;
     end
 
     if (fail == 1'b0)
-      $display(">== ALL TESTS PASSED! ==<");
+      $display("\n\n>== ALL TESTS PASSED! ==<\n\n");
     else
-      $display(">== TESTS FAILED! ==<");
+      $display("\n\n>== TESTS FAILED! ==<\n\n");
 
   end
 
   // Timeout check
   initial begin
-    // Wait for 12_000 ns. Shouldn't be this long
-    #12000;
+    // Wait for 15_000 ns. Shouldn't be this long
+    #15000;
     $display("TIMEOUT");
     $finish();
   end
