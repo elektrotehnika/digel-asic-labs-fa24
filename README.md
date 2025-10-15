@@ -17,6 +17,7 @@ Welcome to the repository for Digital electronics fall 2024 ASIC labs! This repo
         - [Install Anaconda](#install-anaconda)
         - [Open-source Tools and Technology Setup](#open-source-tools-and-technology-setup)
         - [Questa Sim Setup](#questa-sim-setup)
+            - [Questa Sim License Renewal](#questa-sim-license-renewal)
     - [Conclusion](#conclusion)
     - [Acknowledgement](#acknowledgement)
 
@@ -356,6 +357,20 @@ Last but not least, we are going to install a proprietary, but free, EDA simulat
 
 For additional information, refer to this [document](https://cdrdv2-public.intel.com/703091/ug-20352-703090-703091.pdf).
 
+#### Questa Sim License Renewal
+
+In order to renew your yearly license when it expires, follow these steps:
+
+1. Go to [Intel FPGA Licensing Center](https://licensing.intel.com/psg/s/).
+2. Log in with 2-factor identification.
+3. Go to *Licenses -> Licenses With Expired Maintenance*.
+4. Find and copy the *License Activation Code* of your expired license.
+5. Go to *Licenses -> Find and Generate License by Activation Code*.
+6. Paste the *License Activation Code* and click *Search*.
+7. Select your previous license and click *Next*.
+8. Click *Generate* and wait for the license *.dat* file to be sent to your email.
+9. Download the *.dat* file and move it into *~/intelFPGA/license/*.
+10. Update the LM_LICENSE_FILE value (probably in ~/.bashrc) according to your new license file name.
 
 <!--Typically, the Ethernet interface is used, named *ethN*, *enoN*, *enpNsM*, etc. In the absence of an Ethernet interface, you can use a WLAN interface as in the example above, typically named *wlanN*, *wlpNsM*, *wlpNsMfK*, etc.-->
 

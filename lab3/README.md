@@ -522,7 +522,7 @@ This will run a post-synthesis simulation using annotated delays from the `gcd.m
 
 ## Build A Parameterized Divider
 
-In this section, you will build a parameterized divider of unsigned integers. You have two goals:
+In this section, you will build a parameterized divider of unsigned integers. You have three goals:
 
 1. Write the RTL for the design.
 2. Verify functionality with an RTL simulation.

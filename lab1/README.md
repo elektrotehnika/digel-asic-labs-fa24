@@ -1,26 +1,26 @@
 # ASIC Lab 1: Getting Around the Compute Environment
 
 
-## Table of contents
-- [Table of contents](#table-of-contents)
-- [Overview](#overview)
-    - [Submission](#submission)
-- [Regular Expressions](#regular-expressions)
-- [File Permissions](#file-permissions)
-- [Makefiles](#makefiles)
-- [Diffing Files](#diffing-files)
-- [Git](#git)
-- [Customization](#customization)
-- [Lab Deliverables](#lab-deliverables)
-    - [Questions](#questions)
-        - [Question 1: Setup](#question-1-setup)
-        - [Question 2: Common Terminal Tasks](#question-2-common-terminal-tasks)
-        - [Question 3: Fun with Regular Expressions](#question-3-fun-with-regular-expressions)
-        - [Question 4: Understanding File Permissions](#question-4-understanding-file-permissions)
-        - [Question 5: Makefile Targets](#question-5-makefile-targets)
-        - [Question 6: Checking Git Understanding](#question-6-checking-git-understanding)
-- [Appendix](#appendix)
-    - [Cheatsheets](#cheatsheets)
+## Table of Contents
+- [ASIC Lab 2: Simulation](#asic-lab-2-simulation)
+    - [Table of Contents](#table-of-contents)
+    - [Overview](#overview)
+        - [Submission](#submission)
+    - [Regular Expressions](#regular-expressions)
+    - [File Permissions](#file-permissions)
+    - [Makefiles](#makefiles)
+    - [Diffing Files](#diffing-files)
+    - [Git](#git)
+    - [Customization](#customization)
+    - [Lab Deliverables](#lab-deliverables)
+        - [Questions](#questions)
+            - [Question 1: Common Terminal Tasks](#question-1-common-terminal-tasks)
+            - [Question 2: Fun with Regular Expressions](#question-2-fun-with-regular-expressions)
+            - [Question 3: Understanding File Permissions](#question-3-understanding-file-permissions)
+            - [Question 4: Makefile Targets](#question-4-makefile-targets)
+            - [Question 5: Checking Git Understanding](#question-5-checking-git-understanding)
+    - [Appendix](#appendix)
+        - [Cheatsheets](#cheatsheets)
 
 
 ## Overview
